@@ -23,34 +23,7 @@ export async function load() {
         
         return { stats };
     } catch (error: any) {
-        console.error("[LOAD] Error loading stats, using mock data for UI safety:", error.message);
-        return { 
-            stats: [
-                {
-                    id: 'base1-4',
-                    name: 'Charizard',
-                    set: 'Base Set',
-                    image: 'https://images.pokemontcg.io/base1/4_hires.png',
-                    language: 'Português',
-                    avg_price: 850,
-                    min_price: 600,
-                    max_price: 1200,
-                    listing_count: 6,
-                    date: new Date().toISOString()
-                },
-                {
-                    id: 'shining-charizard',
-                    name: 'Shining Charizard',
-                    set: 'Neo Destiny',
-                    image: 'https://images.pokemontcg.io/neo4/107_hires.png',
-                    language: 'Inglês',
-                    avg_price: 1200,
-                    min_price: 900,
-                    max_price: 1500,
-                    listing_count: 3,
-                    date: new Date().toISOString()
-                }
-            ] 
-        };
+        console.error("[LOAD] Error loading stats:", error.message);
+        return { stats: [] };
     }
 }
