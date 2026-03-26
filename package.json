@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "rm -rf build .svelte-kit && vite build",
     "preview": "vite preview",
     "start": "npm run build && node build/index.js",
     "db:seed": "tsx src/scripts/seed.ts",
