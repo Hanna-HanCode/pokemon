@@ -1,6 +1,24 @@
 <script lang="ts">
     export let data: any;
 
+    const flagMap: Record<string, string> = {
+        'Português': '🇧🇷',
+        'Inglês': '🇺🇸',
+        'Japonês': '🇯🇵',
+        'Espanhol': '🇪🇸',
+        'Francês': '🇫🇷',
+        'Alemão': '🇩🇪',
+        'Italiano': '🇮🇹',
+        'Coreano': '🇰🇷',
+        'Chinês': '🇨🇳',
+        'Russo': '🇷🇺'
+    };
+
+    function getFlag(lang: string | null) {
+        if (!lang) return '❓';
+        return flagMap[lang] || '🌐';
+    }
+
     function formatCurrency(value: number | string | null) {
         if (value === null || value === undefined) return '---';
         return `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -11,56 +29,77 @@
         const date = new Date(dateStr);
         return date.toLocaleDateString('pt-BR');
     }
+
+    // Group stats by card ID
+    $: groupedStats = Object.values(data.stats.reduce((acc: any, curr: any) => {
+        if (!acc[curr.id]) {
+            acc[curr.id] = { 
+                id: curr.id,
+                name: curr.name,
+                set: curr.set,
+                image: curr.image,
+                editions: [] 
+            };
+        }
+        if (curr.language) {
+            acc[curr.id].editions.push(curr);
+        }
+        return acc;
+    }, {}));
 </script>
 
 <header class="hero">
     <div class="hero-content">
         <h1>PokéTCG <span class="accent">Aggregator</span></h1>
-        <p>Real-time market insights from LigaPokemon Marketplace</p>
+        <p>Market insights across all languages from LigaPokemon</p>
     </div>
 </header>
 
 <main class="container">
     <div class="stats-grid">
-        {#each data.stats as stat}
+        {#each groupedStats as card}
             <div class="card-glass">
                 <div class="image-wrapper">
-                    <img src={stat.image} alt={stat.name} loading="lazy" />
+                    <img src={card.image} alt={card.name} loading="lazy" />
                     <div class="image-overlay"></div>
                 </div>
                 
                 <div class="card-content">
                     <div class="card-header">
-                        <h2>{stat.name}</h2>
-                        <span class="set-tag">{stat.set}</span>
+                        <h2>{card.name}</h2>
+                        <span class="set-tag">{card.set}</span>
                     </div>
 
-                    <div class="price-metrics">
-                        <div class="metric highlight">
-                            <span class="label">Avg Market</span>
-                            <span class="value">{formatCurrency(stat.avg_price)}</span>
-                        </div>
+                    <div class="editions-list">
+                        {#each card.editions as edition}
+                            <div class="edition-row">
+                                <div class="edition-info">
+                                    <span class="flag" title={edition.language}>{getFlag(edition.language)}</span>
+                                    <span class="lang-name">{edition.language}</span>
+                                </div>
+                                <div class="edition-prices">
+                                    <div class="price-main">
+                                        <span class="value">{formatCurrency(edition.avg_price)}</span>
+                                        <span class="count">({edition.listing_count} listings)</span>
+                                    </div>
+                                    <div class="price-range">
+                                        <span class="min success">{formatCurrency(edition.min_price)}</span>
+                                        <span class="separator">/</span>
+                                        <span class="max danger">{formatCurrency(edition.max_price)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
                         
-                        <div class="metric-row">
-                            <div class="metric">
-                                <span class="label">Lowest</span>
-                                <span class="value success">{formatCurrency(stat.min_price)}</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Highest</span>
-                                <span class="value danger">{formatCurrency(stat.max_price)}</span>
-                            </div>
-                        </div>
+                        {#if card.editions.length === 0}
+                            <p class="no-data">No price data harvested yet.</p>
+                        {/if}
                     </div>
 
                     <div class="card-footer">
                         <div class="footer-item">
-                            <span class="icon">📦</span>
-                            <span>{stat.listing_count || 0} listings</span>
-                        </div>
-                        <div class="footer-item">
                             <span class="icon">🕒</span>
-                            <span>{formatDate(stat.date)}</span>
+                            <span>Updated: {card.editions[0] ? formatDate(card.editions[0].date) : '---'}</span>
                         </div>
                     </div>
                 </div>
@@ -68,7 +107,7 @@
         {/each}
     </div>
 
-    {#if data.stats.length === 0}
+    {#if groupedStats.length === 0}
         <div class="empty-state">
             <div class="empty-icon">🔍</div>
             <h3>No cards tracked yet</h3>
@@ -191,79 +230,83 @@
         margin-bottom: 2rem;
     }
 
-    .price-metrics {
+    .editions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
         margin-bottom: 2rem;
     }
 
-    .metric {
+    .edition-row {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1rem;
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.75rem;
     }
 
-    .metric.highlight {
-        background: rgba(255, 255, 255, 0.03);
-        padding: 1rem;
-        border-radius: 16px;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.02);
+    .edition-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
-    .metric .label {
-        font-size: 0.7rem;
+    .flag {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .lang-name {
+        font-size: 0.85rem;
         font-weight: 600;
-        text-transform: uppercase;
         color: var(--text-secondary);
+        text-transform: uppercase;
         letter-spacing: 0.05em;
     }
 
-    .metric .value {
-        font-size: 1.25rem;
-        font-weight: 700;
-    }
-
-    .metric.highlight .value {
-        font-size: 1.75rem;
-        color: var(--text-primary);
-    }
-
-    .metric-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-    }
-
-    .success { color: var(--accent-green); }
-    .danger { color: var(--accent-red); }
-
-    .card-footer {
-        margin-top: auto;
-        padding-top: 1.5rem;
-        border-top: 1px solid var(--border-card);
+    .edition-prices {
         display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-    }
-
-    .footer-item {
-        display: flex;
-        align-items: center;
+        flex-direction: column;
         gap: 0.5rem;
     }
 
-    .empty-state {
-        text-align: center;
-        padding: 8rem 2rem;
-        background: var(--bg-card);
-        border: 1px dashed var(--border-card);
-        border-radius: 32px;
+    .price-main {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
     }
 
-    .empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        opacity: 0.5;
+    .price-main .value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .price-main .count {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .price-range {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .separator {
+        opacity: 0.3;
+    }
+
+    .no-data {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
     }
 
     @media (max-width: 768px) {

@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import { db } from '../db/index.js';
+import Tesseract from 'tesseract.js';
 
 export interface RawListingResult {
     card_id: string;
@@ -7,12 +8,67 @@ export interface RawListingResult {
     price_text: string;
     condition_text: string;
     seller_name: string;
+    language: string;
 }
+
+// Maps PokéTCG API set names → LigaPokemon edition codes
+const SET_CODE_MAP: Record<string, string> = {
+    'Base Set': 'BS',
+    'Base Set 2': 'B2',
+    'Jungle': 'JU',
+    'Fossil': 'FO',
+    'Team Rocket': 'R',
+    'Gym Heroes': 'G1',
+    'Gym Challenge': 'G2',
+    'Neo Genesis': 'N1',
+    'Neo Discovery': 'N2',
+    'Neo Revelation': 'N3',
+    'Neo Destiny': 'N4',
+    'Legendary Collection': 'LC',
+    'Expedition Base Set': 'EX',
+    'Aquapolis': 'AQ',
+    'Skyridge': 'SK',
+    'Crystal Guardians': 'CG',
+    'Power Keepers': 'PK',
+    'Diamond & Pearl': 'DP',
+    'Secret Wonders': 'SW',
+    'Supreme Victors': 'SV',
+    'Boundaries Crossed': 'BC',
+    'Roaring Skies': 'RS',
+    'Evolutions': 'EVO',
+    'Burning Shadows': 'BUS',
+    'Cosmic Eclipse': 'CEC',
+    'Unbroken Bonds': 'UNB',
+    'Team Up': 'TEU',
+    'Hidden Fates': 'HIF',
+    'Dragon Majesty': 'DRM',
+    'Flashfire': 'FLF',
+    'Generations': 'GEN',
+    'Darkness Ablaze': 'DAA',
+    'Vivid Voltage': 'VIV',
+    'Arceus': 'AR',
+    'Detective Pikachu': 'DET',
+    "McDonald's Collection 2016": "MD6",
+    "McDonald's Collection 2019": "MD9",
+    'POP Series 2': 'POP2',
+    'POP Series 4': 'POP4',
+    'POP Series 5': 'POP5',
+    'POP Series 6': 'POP6',
+    'POP Series 9': 'POP9',
+    'Pokémon Rumble': 'RUM',
+    'Legendary Treasures': 'LT',
+    'DP Black Star Promos': 'DPBSP',
+    'HGSS Black Star Promos': 'HGBSP',
+    'SM Black Star Promos': 'SMBSP',
+    'Nintendo Black Star Promos': 'NBSP',
+    'Wizards Black Star Promos': 'WBSP',
+    'XY Black Star Promos': 'XYBSP',
+};
 
 export async function runScraper(): Promise<RawListingResult[]> {
     // Fetch all cards from database to scrape
-    let { rows: cards } = await db.query('SELECT id, name, set FROM cards');
-    cards = cards.slice(0, 15); // INCREASE TO 15 CARDS FOR BROAD SAMPLE
+    const { rows: cards } = await db.query('SELECT id, name, "set", collector_number FROM cards');
+    console.log(`Found ${cards.length} cards to scrape.`);
     
     if (cards.length === 0) {
         console.warn('No cards found in database to scrape.');
@@ -20,111 +76,120 @@ export async function runScraper(): Promise<RawListingResult[]> {
     }
 
     const browser = await chromium.launch({ headless: true });
-    // Use a real browser user agent to avoid some blocks
     const context = await browser.newContext({
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
     });
     const page = await context.newPage();
     
     const listings: RawListingResult[] = [];
+    const worker = await Tesseract.createWorker('eng');
     
     try {
-        for (const card of cards) {
-            console.log(`Scraping LigaPokemon for: ${card.name} (${card.set})...`);
+        // Scrape all available cards
+        const cardsToScrape = cards;
+        
+        for (const card of cardsToScrape) {
+            const ligaSetCode = SET_CODE_MAP[card.set];
             
-            const encodedQuery = encodeURIComponent(card.name);
-            await page.goto(`https://www.ligapokemon.com.br/?view=cards/search&card=${encodedQuery}`, { waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(4000);
-
-            const cardLink = await page.evaluate((targetSet) => {
-                const links = Array.from(document.querySelectorAll('a.main-link-card[href*="view=cards/card"]'));
-                for (const link of links) {
-                    const parent = link.closest('.card-item') || link.parentElement;
-                    if (parent && parent.textContent?.toLowerCase().includes(targetSet.toLowerCase())) {
-                        return (link as HTMLAnchorElement).href;
-                    }
-                }
-                return links.length > 0 ? (links[0] as HTMLAnchorElement).href : null;
-            }, card.set);
-
-            if (!cardLink) {
-                console.warn(`Could not find card link for ${card.name} (${card.set})`);
+            if (!ligaSetCode) {
+                console.log(`[SKIPPED] No LigaPokemon code for "${card.set}" — skipping ${card.name}`);
                 continue;
             }
 
-            await page.goto(cardLink, { waitUntil: 'domcontentloaded' });
-            await page.waitForLoadState('networkidle');
+            // Standardize card number (extract first part of 20/189)
+            const cardNum = card.collector_number?.split('/')[0] || card.collector_number;
+            const cardUrl = `https://www.ligapokemon.com.br/?view=cards/card&card=${encodeURIComponent(card.name)}&ed=${ligaSetCode}&num=${cardNum}&show=1`;
+            console.log(`[PROCESS] ${card.name} (${card.set}) → ${cardUrl}`);
             
-            // Handle cookie banner if present
             try {
-                const cookieBtn = await page.$('button:contains("TODOS"), .btn-permitir-cookies');
-                if (cookieBtn) await cookieBtn.click();
-            } catch (e) {}
-
-            console.log(`Waiting for marketplace on ${card.name}...`);
-            // Deep scroll to trigger all AJAX behaviors
-            for (let i = 0; i < 4; i++) {
-                await page.evaluate(() => window.scrollBy(0, 1000));
-                await page.waitForTimeout(1500);
-            }
-            
-            await page.waitForTimeout(5000); // Wait extra for last rows
-
-            const shopListings = await page.evaluate(({ cardName, cardId }) => {
-                const results: any[] = [];
+                await page.goto(cardUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+                await page.waitForTimeout(5000);
                 
-                // Strategy 1: Find all elements containing "R$" and "R$ ...,.."
-                const priceElements = Array.from(document.querySelectorAll('*')).filter(el => {
-                    return el.children.length === 0 && el.textContent?.includes('R$') && /R\$\s*[\d,.]+/.test(el.textContent);
-                });
-
-                priceElements.forEach(el => {
-                    const priceText = el.textContent?.trim() || '';
-                    const parentRow = el.closest('a, div.item, .mp-card-item') || el.parentElement;
-                    const condition = parentRow?.textContent?.match(/(NM|SP|MP|HP|D|Danificada)/i)?.[0] || 'NM';
-                    
-                    results.push({
-                        card_id: cardId,
-                        card_name: cardName,
-                        price_text: priceText,
-                        condition_text: condition.toUpperCase(),
-                        seller_name: 'LigaShop'
-                    });
-                });
-
-                // Strategy 2: Specific LigaPokemon selectors as fallback
-                if (results.length === 0) {
-                    const links = document.querySelectorAll('a.link-store');
-                    links.forEach(link => {
-                        const priceMatch = link.textContent?.match(/R\$\s*([\d,.]+)/);
-                        if (priceMatch) {
-                            results.push({
-                                card_id: cardId,
-                                card_name: cardName,
-                                price_text: priceMatch[0],
-                                condition_text: 'NM',
-                                seller_name: link.querySelector('.name')?.textContent?.trim() || 'LigaShop'
-                            });
-                        }
-                    });
+                // Deep scroll to trigger all dynamic content
+                for (let i = 0; i < 5; i++) {
+                    await page.evaluate(() => window.scrollBy(0, 1000));
+                    await page.waitForTimeout(1000);
                 }
                 
-                return results;
-            }, { cardName: card.name, cardId: card.id });
+                const rowLocators = await page.locator('.store[id^="mpline_"]').all();
+                console.log(`[DATA] Found ${rowLocators.length} marketplace rows for ${card.name}.`);
+                
+                // Limit to top 15 rows (usually the cheapest) to prevent infinite OCR loops
+                const rowsToProcess = rowLocators.slice(0, 15);
+                
+                for (let i = 0; i < rowsToProcess.length; i++) {
+                    const row = rowsToProcess[i];
+                    try {
+                        const conditionEl = row.locator('.quality').first();
+                        const conditionText = (await conditionEl.count()) > 0 ? await conditionEl.getAttribute('title') : 'Praticamente Nova (NM)';
+                        const conditionMatch = conditionText?.match(/\((.*?)\)/)?.[1] || 'NM';
+                        
+                        const langImgEl = row.locator('img[src*="country-flags-icons"]').first();
+                        const language = (await langImgEl.count()) > 0 ? await langImgEl.getAttribute('title') : 'Português';
+                        
+                        // Seller Name: try title or alt on the store logo
+                        const sellerLogo = row.locator('.store-name img').first();
+                        let sellerName = 'LigaShop';
+                        if (await sellerLogo.count() > 0) {
+                            sellerName = await sellerLogo.getAttribute('alt') || await sellerLogo.getAttribute('title') || 'LigaShop';
+                            // If still empty, try to get from the link
+                            if (sellerName === 'LigaShop') {
+                                const storeLink = row.locator('a.link-store').first();
+                                sellerName = await storeLink.getAttribute('title') || 'LigaShop';
+                            }
+                        }
 
-            if (shopListings.length > 0) {
-                listings.push(...shopListings);
-                console.log(`Found ${shopListings.length} listings for ${card.name}`);
-            } else {
-                console.log(`Still no listings for ${card.name}`);
+                        let priceText = '0,00';
+                        const priceDiv = row.locator('.price, .new-price').first();
+                        
+                        if (await priceDiv.isVisible()) {
+                            // OCR OCR OCR
+                            const buffer = await priceDiv.screenshot({ type: 'png' });
+                            const { data: { text } } = await worker.recognize(buffer);
+                            
+                            const cleanText = text.replace(/[^0-9,.]/g, '').trim();
+                            if (cleanText) priceText = cleanText;
+                        }
+
+                        // Fallback if OCR fails
+                        if (!priceText || priceText === '0,00' || priceText === '') {
+                            const fallbackPrice = await priceDiv.textContent().catch(() => '0,00');
+                            const match = fallbackPrice?.match(/[\d,.]+/);
+                            if (match) priceText = match[0];
+                        }
+                        
+                        // Cleaning the number
+                        if (priceText.includes('.') && !priceText.includes(',')) {
+                            priceText = priceText.replace('.', ',');
+                        }
+                        if (priceText.length >= 4 && !priceText.includes(',')) {
+                           priceText = priceText.slice(0, -2) + ',' + priceText.slice(-2);
+                        }
+
+                        listings.push({
+                            card_id: card.id,
+                            card_name: card.name,
+                            price_text: `R$ ${priceText}`,
+                            condition_text: conditionMatch,
+                            seller_name: sellerName,
+                            language: language || 'Português'
+                        });
+                        
+                    } catch (rowErr) {
+                        console.error(`[ERROR] Row ${i} on ${card.name}:`, rowErr);
+                    }
+                }
+                
+                console.log(`[SUCCESS] Captured ${Math.min(rowLocators.length, 15)} listings for ${card.name}`);
+            } catch (err: any) {
+                console.error(`[ERROR] ${card.name}: ${err.message}`);
             }
         }
-    } catch (error) {
-        console.error(`Error during scraping LigaPokemon:`, error);
     } finally {
+        await worker.terminate();
         await browser.close();
     }
     
-    console.log(`Scraping complete. Total listings found: ${listings.length}`);
+    console.log(`[DONE] Scraper finished. Total listings in memory: ${listings.length}`);
     return listings;
 }

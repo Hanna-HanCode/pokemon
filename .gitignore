@@ -24,3 +24,12 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Temp research files
+*.html
+*.cjs
+*.txt
+*.json
+old_scraper.ts
+eng.traineddata
+test-results/

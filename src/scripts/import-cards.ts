@@ -25,19 +25,22 @@ async function main() {
     const cards = await fetchCards('name:charizard OR name:pikachu');
 
     for (const card of cards) {
-      console.log(`Importing ${card.name} (${card.id})...`);
+      const collectorNumber = `${card.number}/${card.set.printedTotal}`;
+      console.log(`Importing ${card.name} (${card.id}) - ${collectorNumber}...`);
       await db.query(`
-        INSERT INTO cards (id, name, set, image)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO cards (id, name, set, image, collector_number)
+        VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
           set = EXCLUDED.set,
-          image = EXCLUDED.image
+          image = EXCLUDED.image,
+          collector_number = EXCLUDED.collector_number
       `, [
         card.id,
         card.name,
         card.set.name,
-        card.images.large
+        card.images.large,
+        collectorNumber
       ]);
     }
 
