@@ -3,7 +3,11 @@ import { db } from '../lib/db/index.js';
 async function fetchCards(query = 'set.id:base1') {
   console.log(`Fetching cards from pokemontcg.io with query: ${query}...`);
   const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}&pageSize=50`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+    }
+  });
   
   if (!response.ok) {
     const text = await response.text();
