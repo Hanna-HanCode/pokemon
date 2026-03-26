@@ -42,3 +42,9 @@ export async function generateDailyStats(date: string) {
         }
     }
 }
+
+export async function runStatsAggregator() {
+    const today = new Date().toISOString().split('T')[0];
+    console.log(`Running Daily Stats Aggregator for ${today}...`);
+    await generateDailyStats(today);
+}
