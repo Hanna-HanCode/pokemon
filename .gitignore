@@ -29,7 +29,8 @@ vite.config.ts.timestamp-*
 *.html
 *.cjs
 *.txt
-*.json
+network_responses.json
+price_extraction.json
 old_scraper.ts
 eng.traineddata
 test-results/
