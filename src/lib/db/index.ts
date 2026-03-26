@@ -27,8 +27,8 @@ if (dbUrl) {
     const url = new URL(dbUrl);
     let user = decodeURIComponent(url.username);
     
-    // FORCE project ID if using pooler and it's missing
-    if (url.hostname.includes('pooler.supabase.com') && !user.includes('.')) {
+    // FORCE project ID if it's missing from username (Required for Pooler/Supavisor)
+    if (!user.includes('.') && (url.hostname.includes('supabase.co') || url.hostname.includes('supabase.com'))) {
       user = `${user}.bzrswpkwqiaiudcdeuya`;
     }
 
