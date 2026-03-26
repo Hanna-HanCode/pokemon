@@ -6,6 +6,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "node build/index.js",
     "db:seed": "tsx src/scripts/seed.ts",
     "job:scrape": "tsx src/scripts/scraper-job.ts",
     "job:stats": "tsx src/scripts/stats-job.ts",
