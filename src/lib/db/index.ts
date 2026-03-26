@@ -36,6 +36,11 @@ if (dbUrl) {
     dbConfig.password = decodeURIComponent(url.password);
     dbConfig.host = url.hostname;
     
+    // Ensure we are using the correct regional host if none was provided or if it was wrong
+    if (url.hostname === 'aws-0-sa-east-1.pooler.supabase.com') {
+       dbConfig.host = 'aws-0-us-west-2.pooler.supabase.com';
+    }
+    
     // FORCE pooler port (6543) for Supabase hostnames to ensure IPv4 compatibility
     if (url.hostname.includes('supabase.co') || url.hostname.includes('supabase.com')) {
       dbConfig.port = 6543;
