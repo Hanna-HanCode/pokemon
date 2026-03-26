@@ -16,10 +16,14 @@ export async function load() {
             LEFT JOIN LatestStats ls ON c.id = ls.card_id
             ORDER BY c.name ASC, ls.language ASC
         `);
+        console.log(`[LOAD] Found ${stats.length} rows for stats display.`);
+        if (stats.length > 0) {
+            console.log(`[LOAD] Sample row:`, JSON.stringify(stats[0]));
+        }
         
         return { stats };
-    } catch (error) {
-        console.error("Error loading stats:", error);
+    } catch (error: any) {
+        console.error("[LOAD] Error loading stats:", error.message);
         return { stats: [] };
     }
 }
