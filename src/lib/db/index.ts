@@ -35,8 +35,17 @@ if (dbUrl) {
     dbConfig.user = user;
     dbConfig.password = decodeURIComponent(url.password);
     dbConfig.host = url.hostname;
-    dbConfig.port = parseInt(url.port);
+    
+    // FORCE pooler port (6543) for Supabase hostnames to ensure IPv4 compatibility
+    if (url.hostname.includes('supabase.co') || url.hostname.includes('supabase.com')) {
+      dbConfig.port = 6543;
+    } else {
+      dbConfig.port = parseInt(url.port) || 5432;
+    }
+
     dbConfig.database = url.pathname.substring(1).split('?')[0]; 
+    
+    console.log(`[DB] Connecting to ${dbConfig.host}:${dbConfig.port} as ${dbConfig.user}`);
   } catch (e) {
     console.warn('[DB] Failed to parse DATABASE_URL as URL object, using it as raw string.');
     dbConfig.connectionString = dbUrl;
