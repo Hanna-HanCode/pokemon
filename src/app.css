@@ -1,37 +1,86 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --bg-main: #0a0a0c;
-    --bg-card: rgba(23, 23, 26, 0.7);
-    --border-card: rgba(255, 255, 255, 0.08);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --accent-blue: #3b82f6;
-    --accent-green: #10b981;
-    --accent-red: #ef4444;
-    --glass-blur: blur(12px);
+    /* Poke Palette */
+    --poke-red: #FF0000;
+    --poke-red-dark: #CC0000;
+    --poke-blue: #3B4CCA;
+    --poke-yellow: #FFDE00;
+    --poke-gold: #B3A125;
+    
+    /* Layout Colors */
+    --bg-main: #f4f7f9;
+    --bg-card: #ffffff;
+    --border-card: #e5e7eb;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --accent-blue: var(--poke-blue);
+    --glass-blur: blur(8px);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-card: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
 }
 
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    margin: 0;
-    padding: 0;
     background-color: var(--bg-main);
     color: var(--text-primary);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    line-height: 1.5;
 }
 
 h1, h2, h3 {
-    margin: 0;
-    font-weight: 600;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 a {
-    color: inherit;
-    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.btn-primary {
+    background-color: var(--poke-red);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--poke-red-dark);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.badge-popular {
+    background-color: var(--poke-yellow);
+    color: #4b3f00;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    text-transform: uppercase;
 }

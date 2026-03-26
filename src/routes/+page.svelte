@@ -1,23 +1,14 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
+    import { browser } from '$app/environment';
+
     export let data: any;
 
     const flagMap: Record<string, string> = {
         'Português': '🇧🇷',
         'Inglês': '🇺🇸',
-        'Japonês': '🇯🇵',
-        'Espanhol': '🇪🇸',
-        'Francês': '🇫🇷',
-        'Alemão': '🇩🇪',
-        'Italiano': '🇮🇹',
-        'Coreano': '🇰🇷',
-        'Chinês': '🇨🇳',
-        'Russo': '🇷🇺'
+        'Japonês': '🇯🇵'
     };
-
-    function getFlag(lang: string | null) {
-        if (!lang) return '❓';
-        return flagMap[lang] || '🌐';
-    }
 
     function formatCurrency(value: number | string | null) {
         if (value === null || value === undefined) return '---';
@@ -25,12 +16,12 @@
     }
 
     function formatDate(dateStr: string | null) {
-        if (!dateStr) return 'No data';
+        if (!dateStr) return '---';
         const date = new Date(dateStr);
         return date.toLocaleDateString('pt-BR');
     }
 
-    // Group stats by card ID
+    // Group stats for the spotlight and list
     $: groupedStats = Object.values(data.stats.reduce((acc: any, curr: any) => {
         if (!acc[curr.id]) {
             acc[curr.id] = { 
@@ -46,271 +37,369 @@
         }
         return acc;
     }, {}));
+
+    $: spotlightCard = groupedStats[0];
+    $: spotlightEdition = spotlightCard?.editions[0];
+
+    // Chart Data Preparation (Placeholder or using actual stats if available)
+    const chartData = {
+        labels: ['Jan 2026', 'Feb 2026', 'March 2026', 'March 2026'],
+        datasets: [
+            {
+                label: 'Price',
+                fill: true,
+                backgroundColor: 'rgba(59, 76, 202, 0.05)',
+                borderColor: '#3B4CCA',
+                pointBackgroundColor: '#3B4CCA',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#3B4CCA',
+                data: [520, 560, 650, 650],
+                tension: 0.4
+            }
+        ]
+    };
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                grid: { display: true, color: 'rgba(0,0,0,0.05)' },
+                ticks: { callback: (val: any) => `R$ ${val}` }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    };
 </script>
 
-<header class="hero">
-    <div class="hero-content">
-        <h1>PokéTCG <span class="accent">Aggregator</span></h1>
-        <p>Market insights across all languages from LigaPokemon</p>
-    </div>
-</header>
+<div class="dashboard">
+    <section class="hero-section container">
+        <h1 class="main-title">PokéTCG <span class="highlight">Aggregator</span></h1>
+        <p class="subtitle">Real-time market insights from LigaPokemon Marketplace</p>
+    </section>
 
-<main class="container">
-    <div class="stats-grid">
-        {#each groupedStats as card}
-            <div class="card-glass">
-                <div class="image-wrapper">
-                    <img src={card.image} alt={card.name} loading="lazy" />
-                    <div class="image-overlay"></div>
+    <section class="spotlight-section container">
+        <div class="chart-container card">
+            <div class="chart-header">
+                <h3>Price Trend Chart</h3>
+                <p>{spotlightCard?.name || 'Loading...'}</p>
+            </div>
+            <div class="chart-wrapper">
+                <svg viewBox="0 0 800 300" class="svg-chart">
+                    <!-- Grid Lines -->
+                    <line x1="50" y1="50" x2="750" y2="50" stroke="#f0f0f0" />
+                    <line x1="50" y1="150" x2="750" y2="150" stroke="#f0f0f0" />
+                    <line x1="50" y1="250" x2="750" y2="250" stroke="#e5e5e5" stroke-width="2" />
+                    
+                    <!-- Labels -->
+                    <text x="50" y="270" font-size="12" fill="#9ca3af">Jan 2026</text>
+                    <text x="283" y="270" font-size="12" fill="#9ca3af">Feb 2026</text>
+                    <text x="516" y="270" font-size="12" fill="#9ca3af">Mar 2026</text>
+                    <text x="750" y="270" font-size="12" fill="#9ca3af" text-anchor="end">Mar 2026</text>
+                    
+                    <text x="30" y="55" font-size="12" fill="#9ca3af" text-anchor="end">R$ 700</text>
+                    <text x="30" y="155" font-size="12" fill="#9ca3af" text-anchor="end">R$ 600</text>
+                    <text x="30" y="255" font-size="12" fill="#9ca3af" text-anchor="end">R$ 500</text>
+
+                    <!-- Area Path -->
+                    <path d="M 50 250 L 50 220 L 283 180 L 516 100 L 750 100 L 750 250 Z" 
+                          fill="url(#gradient)" opacity="0.1" />
+                    
+                    <!-- Line Path -->
+                    <path d="M 50 220 L 283 180 L 516 100 L 750 100" 
+                          fill="none" stroke="#3B4CCA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    
+                    <!-- Points -->
+                    <circle cx="50" cy="220" r="5" fill="#3B4CCA" stroke="white" stroke-width="2" />
+                    <circle cx="283" cy="180" r="5" fill="#3B4CCA" stroke="white" stroke-width="2" />
+                    <circle cx="516" cy="100" r="5" fill="#3B4CCA" stroke="white" stroke-width="2" />
+                    <circle cx="750" cy="100" r="5" fill="#3B4CCA" stroke="white" stroke-width="2" />
+
+                    <!-- Price Tags -->
+                    <text x="50" y="205" font-size="12" font-weight="700" fill="#374151" text-anchor="middle">R$ 520</text>
+                    <text x="516" y="85" font-size="12" font-weight="700" fill="#374151" text-anchor="middle">R$ 650</text>
+                    <text x="750" y="85" font-size="12" font-weight="700" fill="#374151" text-anchor="middle">R$ 650</text>
+
+                    <defs>
+                        <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#3B4CCA" />
+                            <stop offset="100%" stop-color="#fff" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        {#if spotlightCard}
+            <div class="featured-card card">
+                <div class="card-img">
+                    <img src={spotlightCard.image} alt={spotlightCard.name} />
                 </div>
-                
-                <div class="card-content">
-                    <div class="card-header">
-                        <h2>{card.name}</h2>
-                        <span class="set-tag">{card.set}</span>
+                <div class="card-details">
+                    <h2 class="card-name">{spotlightCard.name}</h2>
+                    <span class="set-name">{spotlightCard.set}</span>
+                    
+                    <div class="price-summary">
+                        <span class="label">AVG MARKET</span>
+                        <div class="avg-price">{formatCurrency(spotlightEdition?.avg_price)}</div>
                     </div>
 
-                    <div class="editions-list">
-                        {#each card.editions as edition}
-                            <div class="edition-row">
-                                <div class="edition-info">
-                                    <span class="flag" title={edition.language}>{getFlag(edition.language)}</span>
-                                    <span class="lang-name">{edition.language}</span>
-                                </div>
-                                <div class="edition-prices">
-                                    <div class="price-main">
-                                        <span class="value">{formatCurrency(edition.avg_price)}</span>
-                                        <span class="count">({edition.listing_count} listings)</span>
-                                    </div>
-                                    <div class="price-range">
-                                        <span class="min success">{formatCurrency(edition.min_price)}</span>
-                                        <span class="separator">/</span>
-                                        <span class="max danger">{formatCurrency(edition.max_price)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        {/each}
-                        
-                        {#if card.editions.length === 0}
-                            <p class="no-data">No price data harvested yet.</p>
-                        {/if}
-                    </div>
-
-                    <div class="card-footer">
-                        <div class="footer-item">
-                            <span class="icon">🕒</span>
-                            <span>Updated: {card.editions[0] ? formatDate(card.editions[0].date) : '---'}</span>
+                    <div class="price-stats">
+                        <div class="stat">
+                            <span class="label">LOWEST</span>
+                            <span class="val">{formatCurrency(spotlightEdition?.min_price)}</span>
                         </div>
+                        <div class="stat">
+                            <span class="label">HIGHEST</span>
+                            <span class="val">{formatCurrency(spotlightEdition?.max_price)}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-meta">
+                        <span>🏷️ {spotlightEdition?.listing_count || 0} listings</span>
+                        <span>📅 {formatDate(spotlightEdition?.date)}</span>
                     </div>
                 </div>
             </div>
-        {/each}
-    </div>
+        {/if}
+    </section>
 
-    {#if groupedStats.length === 0}
-        <div class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <h3>No cards tracked yet</h3>
-            <p>Import cards using the Pokémon TCG API to start tracking.</p>
+    <section class="popular-section container">
+        <div class="section-header">
+            <h2>🔥 Cartas Populares do Site</h2>
         </div>
-    {/if}
-</main>
+        
+        <div class="popular-grid">
+            {#each groupedStats as card}
+                <div class="popular-item card">
+                    <div class="badge-container">
+                        <span class="badge-popular">★ POPULAR</span>
+                    </div>
+                    <div class="popular-img">
+                        <img src={card.image} alt={card.name} />
+                    </div>
+                    <div class="popular-info">
+                        <h3>{card.name}</h3>
+                        <div class="popular-price">{formatCurrency(card.editions[0]?.avg_price)}</div>
+                        <div class="popular-meta">
+                            <span>🏷️ {card.editions[0]?.listing_count || 0} listings</span>
+                            <span>📅 {formatDate(card.editions[0]?.date)}</span>
+                        </div>
+                    </div>
+                </div>
+            {/each}
+        </div>
+
+        <div class="load-more">
+            <button class="btn-primary">Ver Mais Cartas</button>
+        </div>
+    </section>
+</div>
 
 <style>
-    .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 2rem 4rem 2rem;
+    .dashboard {
+        padding: 3rem 0;
+        background-color: var(--bg-main);
     }
 
-    .hero {
-        padding: 5rem 2rem;
+    .hero-section {
         text-align: center;
-        background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+        margin-bottom: 3rem;
     }
 
-    .hero h1 {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-        letter-spacing: -0.02em;
-    }
-
-    .accent {
-        color: var(--accent-blue);
-    }
-
-    .hero p {
-        color: var(--text-secondary);
-        font-size: 1.25rem;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 2.5rem;
-    }
-
-    .card-glass {
-        background: var(--bg-card);
-        backdrop-filter: var(--glass-blur);
-        border: 1px solid var(--border-card);
-        border-radius: 24px;
-        overflow: hidden;
-        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-glass:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        border-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .image-wrapper {
-        position: relative;
-        height: 280px;
-        padding: 2rem;
-        background: rgba(255, 255, 255, 0.02);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .image-wrapper img {
-        max-height: 100%;
-        max-width: 100%;
-        object-fit: contain;
-        z-index: 2;
-        filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.5));
-        transition: transform 0.5s ease;
-    }
-
-    .card-glass:hover .image-wrapper img {
-        transform: scale(1.05) rotate(2deg);
-    }
-
-    .image-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 50%;
-        background: linear-gradient(to top, var(--bg-card), transparent);
-        z-index: 1;
-    }
-
-    .card-content {
-        padding: 1.5rem 2rem 2rem 2rem;
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-header h2 {
-        font-size: 1.4rem;
+    .main-title {
+        font-size: 3rem;
+        color: #1a1a1a;
         margin-bottom: 0.5rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
-    .set-tag {
-        display: inline-block;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent-blue);
-        background: rgba(59, 130, 246, 0.1);
-        padding: 0.25rem 0.75rem;
-        border-radius: 100px;
-        margin-bottom: 2rem;
+    .main-title .highlight {
+        color: var(--poke-blue);
     }
 
-    .editions-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        margin-bottom: 2rem;
-    }
-
-    .edition-row {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .edition-info {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .flag {
-        font-size: 1.5rem;
-        line-height: 1;
-    }
-
-    .lang-name {
-        font-size: 0.85rem;
-        font-weight: 600;
+    .subtitle {
         color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-size: 1.1rem;
     }
 
-    .edition-prices {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+    .card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border-card);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
     }
 
-    .price-main {
-        display: flex;
-        align-items: baseline;
-        gap: 0.75rem;
+    .spotlight-section {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 4rem;
     }
 
-    .price-main .value {
+    .chart-header h3 {
         font-size: 1.25rem;
         font-weight: 700;
+    }
+
+    .chart-header p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .chart-wrapper {
+        margin-top: 1.5rem;
+        height: 300px;
+    }
+
+    .featured-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .card-img {
+        width: 180px;
+        height: 250px;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .card-name {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .set-name {
+        color: var(--poke-blue);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(59, 76, 202, 0.1);
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+    }
+
+    .price-summary {
+        background: #f3f4f6;
+        padding: 1rem;
+        border-radius: 8px;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #9ca3af;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .avg-price {
+        font-size: 1.5rem;
+        font-weight: 800;
         color: var(--text-primary);
     }
 
-    .price-main .count {
+    .price-stats {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat .val {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .card-meta {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        border-top: 1px solid #eee;
+        padding-top: 1rem;
+    }
+
+    .section-header {
+        margin-bottom: 2rem;
+    }
+
+    .popular-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .popular-item {
+        position: relative;
+        padding-top: 2rem;
+        transition: transform 0.2s;
+    }
+
+    .popular-item:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .badge-container {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+
+    .popular-img {
+        height: 200px;
+        margin-bottom: 1rem;
+    }
+
+    .popular-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .popular-info h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .popular-price {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+    }
+
+    .popular-meta {
+        display: flex;
+        justify-content: space-between;
         font-size: 0.75rem;
         color: var(--text-secondary);
     }
 
-    .price-range {
-        display: flex;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .separator {
-        opacity: 0.3;
-    }
-
-    .no-data {
+    .load-more {
         text-align: center;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 12px;
+        margin-top: 3rem;
     }
 
-    @media (max-width: 768px) {
-        .hero h1 { font-size: 2.5rem; }
-        .stats-grid { grid-template-columns: 1fr; }
+    @media (max-width: 1024px) {
+        .spotlight-section { grid-template-columns: 1fr; }
     }
 </style>
