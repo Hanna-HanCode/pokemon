@@ -2,6 +2,9 @@ import pkg from 'pg';
 import 'dotenv/config';
 const { Pool } = pkg;
 
+// Force bypass SSL for Supabase/SquareCloud
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/poketcg',
   ssl: {
