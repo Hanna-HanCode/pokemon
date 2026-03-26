@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 
 async function start() {
-  console.log('[DEPLOY] Version: 1.0.7 - Dynamic Import Fix');
+  console.log('[DEPLOY] Version: 1.0.8 - Resolved Peer Dependency Conflict');
 
   try {
     console.log('[DEPLOY] Running build command...');
