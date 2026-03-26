@@ -11,7 +11,8 @@
     "job:scrape": "tsx src/scripts/scraper-job.ts",
     "job:stats": "tsx src/scripts/stats-job.ts",
     "job:cron": "tsx src/scripts/cron.ts",
-    "job:import-cards": "tsx src/scripts/import-cards.ts"
+    "job:import-cards": "tsx src/scripts/import-cards.ts",
+    "postinstall": "npm run build"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.0.0",
