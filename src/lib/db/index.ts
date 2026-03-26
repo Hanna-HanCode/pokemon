@@ -25,11 +25,18 @@ if (dbUrl) {
   try {
     // Manual parsing to avoid regex errors or driver-level URL parser quirks
     const url = new URL(dbUrl);
-    dbConfig.user = decodeURIComponent(url.username);
+    let user = decodeURIComponent(url.username);
+    
+    // FORCE project ID if using pooler and it's missing
+    if (url.hostname.includes('pooler.supabase.com') && !user.includes('.')) {
+      user = `${user}.bzrswpkwqiaiudcdeuya`;
+    }
+
+    dbConfig.user = user;
     dbConfig.password = decodeURIComponent(url.password);
     dbConfig.host = url.hostname;
     dbConfig.port = parseInt(url.port);
-    dbConfig.database = url.pathname.substring(1).split('?')[0]; // remove leading slash and query
+    dbConfig.database = url.pathname.substring(1).split('?')[0]; 
   } catch (e) {
     console.warn('[DB] Failed to parse DATABASE_URL as URL object, using it as raw string.');
     dbConfig.connectionString = dbUrl;
