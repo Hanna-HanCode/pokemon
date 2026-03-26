@@ -6,13 +6,12 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node build/index.js",
+    "start": "npm run build && node build/index.js",
     "db:seed": "tsx src/scripts/seed.ts",
     "job:scrape": "tsx src/scripts/scraper-job.ts",
     "job:stats": "tsx src/scripts/stats-job.ts",
     "job:cron": "tsx src/scripts/cron.ts",
-    "job:import-cards": "tsx src/scripts/import-cards.ts",
-    "postinstall": "npm run build"
+    "job:import-cards": "tsx src/scripts/import-cards.ts"
   },
   "dependencies": {
     "@sveltejs/adapter-node": "^5.0.0",
