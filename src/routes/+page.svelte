@@ -21,7 +21,7 @@
         return date.toLocaleDateString('pt-BR');
     }
 
-    // Group stats for the spotlight and list
+    // Group stats by card, preserving server order (listing_count DESC)
     $: groupedStats = Object.values(data.stats.reduce((acc: any, curr: any) => {
         if (!acc[curr.id]) {
             acc[curr.id] = { 
@@ -37,6 +37,11 @@
         }
         return acc;
     }, {}));
+
+    // Separate popular cards (top 10) from the rest
+    $: popularSet = new Set(data.popularIds || []);
+    $: popularCards = groupedStats.filter((c: any) => popularSet.has(c.id));
+    $: otherCards = groupedStats.filter((c: any) => !popularSet.has(c.id));
 
     $: spotlightCard = groupedStats[0];
     $: spotlightEdition = spotlightCard?.editions[0];
@@ -172,20 +177,22 @@
 
     <section class="popular-section container">
         <div class="section-header">
-            <h2>🔥 Cartas Populares do Site</h2>
+            <h2>🔥 Cartas Populares</h2>
+            <p class="section-subtitle">Top 10 cartas com mais listagens no marketplace</p>
         </div>
         
         <div class="popular-grid">
-            {#each groupedStats as card}
+            {#each popularCards as card, i}
                 <div class="popular-item card">
                     <div class="badge-container">
-                        <span class="badge-popular">★ POPULAR</span>
+                        <span class="badge-popular">★ #{i + 1} POPULAR</span>
                     </div>
                     <div class="popular-img">
                         <img src={card.image} alt={card.name} />
                     </div>
                     <div class="popular-info">
                         <h3>{card.name}</h3>
+                        <span class="set-tag">{card.set}</span>
                         <div class="popular-price">{formatCurrency(card.editions[0]?.avg_price)}</div>
                         <div class="popular-meta">
                             <span>🏷️ {card.editions[0]?.listing_count || 0} listings</span>
@@ -195,11 +202,35 @@
                 </div>
             {/each}
         </div>
+    </section>
 
-        <div class="load-more">
-            <button class="btn-primary">Ver Mais Cartas</button>
+    {#if otherCards.length > 0}
+    <section class="more-section container">
+        <div class="section-header">
+            <h2>📋 Mais Cartas Monitoradas</h2>
+            <p class="section-subtitle">Cartas com dados de preço atualizados</p>
+        </div>
+        
+        <div class="popular-grid">
+            {#each otherCards as card}
+                <div class="popular-item card">
+                    <div class="popular-img">
+                        <img src={card.image} alt={card.name} />
+                    </div>
+                    <div class="popular-info">
+                        <h3>{card.name}</h3>
+                        <span class="set-tag">{card.set}</span>
+                        <div class="popular-price">{formatCurrency(card.editions[0]?.avg_price)}</div>
+                        <div class="popular-meta">
+                            <span>🏷️ {card.editions[0]?.listing_count || 0} listings</span>
+                            <span>📅 {formatDate(card.editions[0]?.date)}</span>
+                        </div>
+                    </div>
+                </div>
+            {/each}
         </div>
     </section>
+    {/if}
 </div>
 
 <style>
@@ -397,6 +428,29 @@
     .load-more {
         text-align: center;
         margin-top: 3rem;
+    }
+
+    .set-tag {
+        color: var(--poke-blue);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(59, 76, 202, 0.1);
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .section-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .more-section {
+        margin-top: 4rem;
+        padding-bottom: 2rem;
     }
 
     @media (max-width: 1024px) {
