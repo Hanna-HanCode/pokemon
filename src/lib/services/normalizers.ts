@@ -4,7 +4,19 @@ export async function normalizeRawListing(item: any): Promise<{ card_id: string 
   let price = null;
   if (item.price_text) {
       // Clean BRL formatting: R$ 1.500,00 -> 1500.00
-      const clean = item.price_text.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+      // But also handle already cleaned formats like R$ 1500.00
+      let clean = item.price_text.replace(/[R$\s]/g, '');
+      
+      if (clean.includes(',') && clean.includes('.')) {
+          // Standard BRL: 1.500,00
+          clean = clean.replace(/\./g, '').replace(',', '.');
+      } else if (clean.includes(',')) {
+          // Only comma: 200,26 -> 200.26
+          clean = clean.replace(',', '.');
+      }
+      // If only dot: 200.26 -> keep as is. 
+      // If 1.500 -> scraper logic already handled or it's dangerous, but we trust scraper.
+      
       price = parseFloat(clean);
   }
   

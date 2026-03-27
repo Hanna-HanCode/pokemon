@@ -116,12 +116,72 @@ export async function runScraper(): Promise<RawListingResult[]> {
 
             // Standardize card number (extract first part of 20/189)
             const cardNum = card.collector_number?.split('/')[0] || card.collector_number;
-            const cardUrl = `https://www.ligapokemon.com.br/?view=cards/card&card=${encodeURIComponent(card.name)}&ed=${ligaSetCode}&num=${cardNum}&show=1`;
-            console.log(`[PROCESS] ${card.name} (${card.set}) → ${cardUrl}`);
+            let cardUrl = `https://www.ligapokemon.com.br/?view=cards/card&card=${encodeURIComponent(card.name)}&ed=${ligaSetCode}&num=${cardNum || ''}&show=1`;
+            
+            console.log(`[PROCESS] ${card.name} (${card.set}) [#${cardNum}] → ${cardUrl}`);
             
             try {
-                await page.goto(cardUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
                 await page.waitForTimeout(5000);
+                
+                // --- VERIFICATION STEP ---
+                // Wait for the selectors to be present
+                await page.waitForSelector('.card-name', { timeout: 10000 }).catch(() => {});
+                
+                let pageCardName = await page.locator('.card-name').first().textContent().catch(() => '');
+                let pageEdition = await page.locator('.select-card-edition .entry, .select-card-edition [id*="select2-"], .select2-selection__rendered').first().textContent().catch(() => '');
+                let pageNumber = await page.locator('.select-card-edition b').first().textContent().catch(() => '');
+                
+                const cleanPageName = pageCardName?.replace(/\(.*?\)/, '').trim() || '';
+                const cleanPageNumber = pageNumber?.replace('#', '').trim() || '';
+                const cleanDBName = card.name.trim();
+                
+                // Strict check: Name must match (case-insensitive) AND (Edition code must be in header OR set name must match)
+                const isCorrectPage = cleanPageName.toLowerCase() === cleanDBName.toLowerCase() && 
+                                    (pageEdition?.toUpperCase().includes(ligaSetCode.toUpperCase()) || 
+                                     pageEdition?.toLowerCase().includes(card.set.toLowerCase()));
+                                     
+                // Optional: also check number if available
+                const numberMatches = !cardNum || cleanPageNumber === cardNum;
+                
+                const finalMatch = isCorrectPage && numberMatches;
+
+                if (!finalMatch) {
+                    console.log(`[RETRY] Page mismatch: "${cleanPageName}" / "${pageEdition}". Searching specifically...`);
+                    // Search fallback
+                    await page.goto(`https://www.ligapokemon.com.br/?view=cards/card&card=${encodeURIComponent(card.name)}`, { waitUntil: 'domcontentloaded' });
+                    await page.waitForTimeout(3000);
+                    
+                    // Look for the correct link in "Outras Edições" or results
+                    const links = await page.locator(`a[href*="ed=${ligaSetCode}"][href*="num=${cardNum}"]`).all();
+                    if (links.length > 0) {
+                        await links[0].click();
+                        await page.waitForTimeout(3000);
+                    } else {
+                        // Try just by set code
+                        const setLinks = await page.locator(`a[href*="ed=${ligaSetCode}"]`).all();
+                        if (setLinks.length > 0) {
+                            // Find the one with the correct number in text
+                            let found = false;
+                            for (const link of setLinks) {
+                                const text = await link.evaluate(el => el.parentElement?.textContent || '');
+                                if (text.includes(cardNum)) {
+                                    await link.click();
+                                    await page.waitForTimeout(3000);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                console.log(`[FAILED] Could not find exact match for ${card.name} in set ${card.set} (#${cardNum})`);
+                                continue;
+                            }
+                        } else {
+                             console.log(`[FAILED] No links for set ${ligaSetCode} found for ${card.name}`);
+                             continue;
+                        }
+                    }
+                }
+                // --- END VERIFICATION ---
                 
                 // Deep scroll to trigger all dynamic content
                 for (let i = 0; i < 5; i++) {
@@ -176,18 +236,39 @@ export async function runScraper(): Promise<RawListingResult[]> {
                             if (match) priceText = match[0];
                         }
                         
-                        // Cleaning the number
-                        if (priceText.includes('.') && !priceText.includes(',')) {
-                            priceText = priceText.replace('.', ',');
+                        // Ultra-robust BRL cleaning
+                        // Examples: 200,26 -> 200.26 | 1.500,00 -> 1500.00 | 1,500.00 -> 1500.00
+                        let finalPriceText = priceText.trim();
+                        
+                        // Detect if there are multiple dots/commas that indicate OCR concat
+                        if (finalPriceText.split(/[.,]/).length > 3) {
+                             // Likely doubled price (e.g. 20.0020.00)
+                             finalPriceText = finalPriceText.slice(0, Math.floor(finalPriceText.length / 2));
                         }
-                        if (priceText.length >= 4 && !priceText.includes(',')) {
-                           priceText = priceText.slice(0, -2) + ',' + priceText.slice(-2);
+
+                        // Remove R$ and spaces
+                        finalPriceText = finalPriceText.replace(/[R$\s]/g, '');
+
+                        // Handle BRL dots (thousands) and commas (decimals)
+                        if (finalPriceText.includes(',') && finalPriceText.includes('.')) {
+                            // Format: 1.500,00 -> 1500.00
+                            finalPriceText = finalPriceText.replace(/\./g, '').replace(',', '.');
+                        } else if (finalPriceText.includes(',')) {
+                            // Format: 200,26 -> 200.26
+                            finalPriceText = finalPriceText.replace(',', '.');
+                        } else if (finalPriceText.includes('.')) {
+                             // Format: 200.26 or 1.500 (ambiguous)
+                             // If more than 3 digits after dot, assume it was thousands: 1.500 -> 1500
+                             const parts = finalPriceText.split('.');
+                             if (parts[parts.length - 1].length === 3) {
+                                 finalPriceText = finalPriceText.replace(/\./g, '');
+                             }
                         }
 
                         listings.push({
                             card_id: card.id,
                             card_name: card.name,
-                            price_text: `R$ ${priceText}`,
+                            price_text: `R$ ${finalPriceText}`,
                             condition_text: conditionMatch,
                             seller_name: sellerName,
                             language: language || 'Português'
