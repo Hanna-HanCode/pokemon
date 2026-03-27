@@ -63,6 +63,24 @@ const SET_CODE_MAP: Record<string, string> = {
     'Nintendo Black Star Promos': 'NBSP',
     'Wizards Black Star Promos': 'WBSP',
     'XY Black Star Promos': 'XYBSP',
+    // Mega Evolution Series
+    'Mega Evolution': 'MEG',
+    'Phantasmal Flames': 'PFL',
+    'Ascended Heroes': 'ASC',
+    'Perfect Order': 'POR',
+    // Scarlet & Violet Series
+    'Scarlet & Violet': 'SV1',
+    'Paldea Evolved': 'SV2',
+    'Obsidian Flames': 'SV3',
+    '151': 'MEW',
+    'Paradox Rift': 'SV4',
+    'Paldean Fates': 'PAF',
+    'Temporal Forces': 'TEF',
+    'Twilight Masquerade': 'TWM',
+    'Shrouded Fable': 'SFA',
+    'Stellar Crown': 'SCR',
+    'Surging Sparks': 'SSP',
+    'Prismatic Evolutions': 'PRE',
 };
 
 export async function runScraper(): Promise<RawListingResult[]> {
