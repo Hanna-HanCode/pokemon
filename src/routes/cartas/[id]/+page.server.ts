@@ -16,20 +16,32 @@ export async function load({ params }) {
         if (cardRows.length === 0) throw error(404, 'Card not found');
         const card = cardRows[0];
 
-        // 2. Price history (last 30 days, per language and condition-agnostic using daily_stats)
-        const { rows: history } = await db.query(
-            `SELECT date, TO_CHAR(date, 'DD/MM') as label, language,
+        // 2. Daily Price history (aggregated, last 30 days)
+        const { rows: dailyHistory } = await db.query(
+            `SELECT date, TO_CHAR(date, 'DD/MM') as label, language, condition, 
                     ROUND(avg_price::numeric, 2) as avg_price,
                     ROUND(min_price::numeric, 2) as min_price,
-                    ROUND(max_price::numeric, 2) as max_price,
-                    listing_count
+                    ROUND(max_price::numeric, 2) as max_price
              FROM daily_stats
              WHERE card_id = $1
              ORDER BY date ASC`,
             [cardId]
         );
 
-        // 3. Current listings breakdown by condition
+        // 2b. Hourly Price history (granular, last ~50 readings)
+        const { rows: hourlyHistory } = await db.query(
+            `SELECT collected_at as date, TO_CHAR(collected_at, 'DD/MM HH24:MI') as label, language, condition,
+                    ROUND(price, 2) as avg_price, -- Individual price as 'avg' for the point
+                    ROUND(price, 2) as min_price,
+                    ROUND(price, 2) as max_price
+             FROM listings_normalized
+             WHERE card_id = $1
+             ORDER BY collected_at ASC
+             LIMIT 100`,
+            [cardId]
+        );
+
+        // 3. Current listings breakdown (Condition Summary)
         const { rows: listings } = await db.query(
             `SELECT condition, language,
                     ROUND(AVG(price)::numeric, 2) as avg_price,
@@ -43,7 +55,7 @@ export async function load({ params }) {
             [cardId]
         );
 
-        // 4. Detailed individual listings (Top 10 cheapest/latest)
+        // 4. Detailed individual listings (Latest 15)
         const { rows: realListings } = await db.query(
             `SELECT condition, price, language, seller_name, 
                     TO_CHAR(collected_at, 'DD/MM HH24:MI') as time
@@ -54,25 +66,24 @@ export async function load({ params }) {
             [cardId]
         );
 
-        // 5. Unique languages available
-        const languages = [...new Set(history.map((r: any) => r.language).filter(Boolean))];
-        const conditionLanguages = [...new Set(listings.map((r: any) => r.language).filter(Boolean))];
-
-        // 6. Calculate trend (%) based on history (per language AND condition)
-        const trends: Record<string, any> = {}; // dynamic key: `${lang}_${cond}`
-        const langs = [...new Set(history.map((h: any) => h.language))];
-        const conditions = [...new Set(history.map((h: any) => h.condition))];
+        // 5. Build unique language and condition sets from all data
+        const languages = [...new Set([...dailyHistory, ...hourlyHistory, ...listings].map(r => r.language).filter(Boolean))];
+        
+        // 6. Calculate trends based on dailyHistory
+        const trends: Record<string, any> = {};
+        const langs = [...new Set(dailyHistory.map(h => h.language))];
+        const conditions = [...new Set(dailyHistory.map(h => h.condition))];
 
         for (const lang of langs) {
             for (const cond of conditions) {
-                const hists = history.filter((h: any) => h.language === lang && h.condition === cond);
+                const hists = dailyHistory.filter((h: any) => h.language === lang && h.condition === cond);
                 if (hists.length >= 2) {
                     const latest = parseFloat(hists[hists.length - 1].avg_price);
                     const previous = parseFloat(hists[hists.length - 2].avg_price);
                     if (previous > 0) {
                         const diff = ((latest - previous) / previous) * 100;
                         trends[`${lang}_${cond}`] = {
-                            percent: diff.toFixed(1),
+                            percent: Math.abs(diff).toFixed(1),
                             direction: diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
                         };
                     }
@@ -80,7 +91,7 @@ export async function load({ params }) {
             }
         }
 
-        return { card, history, listings, realListings, languages, conditionLanguages, trends };
+        return { card, dailyHistory, hourlyHistory, listings, realListings, languages, trends };
     } catch (err: any) {
         if (err.status === 404) throw err;
         console.error('[LOAD] card detail error:', err.message);

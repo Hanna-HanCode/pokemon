@@ -7,25 +7,21 @@ import { db } from '../db/index.js';
 export function initCron() {
     console.log("Initializing Pokémon TCG Cron Manager...");
 
-    // Schedule every hour
-    cron.schedule('0 * * * *', async () => {
-        console.log(`[${new Date().toISOString()}] Starting scheduled hourly job...`);
-        
+    const cronTask = async () => {
+        console.log(`[${new Date().toISOString()}] Starting scheduled job (Scraper + Aggregator)...`);
         try {
             // 1. Run Scraper
             const listings = await runScraper();
             console.log(`Scraper found ${listings.length} raw listings.`);
             
-            // 2. Process and Normalize in-process
+            // 2. Process and Normalize
             for (const item of listings) {
-                console.log(`Processing listing: ${item.card_name} - ${item.price_text} (${item.language})`);
                 const { rows } = await db.query(
                     `INSERT INTO listings_raw (card_name, price_text, condition_text, seller_name, language) VALUES ($1, $2, $3, $4, $5) RETURNING id;`,
                     [item.card_name, item.price_text, item.condition_text, item.seller_name, item.language]
                 );
                 
                 const normalized = await normalizeRawListing(item);
-                console.log(`Normalized:`, normalized);
                 if (normalized.card_id && normalized.price) {
                     await db.query(
                         `INSERT INTO listings_normalized (card_id, price, condition, language, collected_at) VALUES ($1, $2, $3, $4, NOW());`,
@@ -37,12 +33,17 @@ export function initCron() {
 
             // 3. Run Aggregator
             await runStatsAggregator();
-            
-            console.log(`[${new Date().toISOString()}] Hourly job completed successfully.`);
+            console.log(`[${new Date().toISOString()}] Job completed successfully.`);
         } catch (err) {
-            console.error(`[${new Date().toISOString()}] Error in hourly cron:`, err);
+            console.error(`[${new Date().toISOString()}] Error in cron job:`, err);
         }
-    }, {
+    };
+
+    // Run once immediately on startup
+    cronTask();
+
+    // Schedule every hour (at minute 0)
+    cron.schedule('0 * * * *', cronTask, {
         timezone: "America/Sao_Paulo"
     });
 }

@@ -1,29 +1,19 @@
 <script lang="ts">
     export let data: any;
 
-    const { card, history, listings, languages, realListings, trends } = data;
+    const { card, dailyHistory, hourlyHistory, listings, realListings, languages, trends } = data;
 
     let activeLanguage = languages[0] || 'Português';
+    let historyView: 'hourly' | 'daily' = 'hourly'; // Default to hourly as requested
 
-    // Language emoji
-    const langEmoji: Record<string,string> = {
-        'Português': '🇧🇷','Inglês': '🇺🇸','Japonês': '🇯🇵'
-    };
-
-    // Condition display names (Full Portuguese)
+    // Condition display names
     const conditionLabels: Record<string,string> = {
-        'M': 'Nova', 
-        'NM': 'Praticamente Nova', 
-        'SP': 'Usada Levemente', 
-        'MP': 'Usada Moderadamente', 
-        'HP': 'Muito Usada', 
-        'DMG': 'Danificada',
-        'D': 'Danificada',
-        'Near Mint': 'Praticamente Nova',
-        'Slightly Played': 'Usada Levemente',
-        'Moderately Played': 'Usada Moderadamente',
-        'Heavily Played': 'Muito Usada',
-        'Damaged': 'Danificada',
+        'M': 'Nova', 'Mint': 'Nova',
+        'NM': 'Praticamente Nova', 'Near Mint': 'Praticamente Nova',
+        'SP': 'Usada Levemente', 'Slightly Played': 'Usada Levemente',
+        'MP': 'Usada Moderadamente', 'Moderately Played': 'Usada Moderadamente',
+        'HP': 'Muito Usada', 'Heavily Played': 'Muito Usada',
+        'DMG': 'Danificada', 'Damaged': 'Danificada', 'D': 'Danificada',
         'NM-MT': 'Praticamente Nova'
     };
     
@@ -52,7 +42,8 @@
     }
 
     // Filter history for active language
-    $: filteredHistory = history.filter((h: any) => h.language === activeLanguage || (!h.language && activeLanguage === languages[0]));
+    $: historySource = historyView === 'hourly' ? hourlyHistory : dailyHistory;
+    $: filteredHistory = historySource.filter((h: any) => h.language === activeLanguage || (!h.language && activeLanguage === languages[0]));
     $: filteredListings = listings.filter((l: any) => l.language === activeLanguage);
 
     // --- SVG Chart Computation ---
@@ -204,7 +195,13 @@
         <!-- Price Chart Section -->
         <div class="chart-section card">
             <div class="chart-header">
-                <h2>📈 Histórico de Preços</h2>
+                <div class="header-left">
+                    <h2>📈 Histórico de Preços</h2>
+                    <div class="view-toggle">
+                        <button class:active={historyView === 'hourly'} on:click={() => historyView = 'hourly'}>Horário</button>
+                        <button class:active={historyView === 'daily'} on:click={() => historyView = 'daily'}>Diário</button>
+                    </div>
+                </div>
                 <div class="chart-meta">
                     {#if chartData.length > 0}
                         <span>{chartData[0]?.label} → {chartData[chartData.length-1]?.label}</span>
@@ -453,9 +450,35 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
+    .header-left { display: flex; align-items: center; gap: 1.5rem; }
     .chart-header h2 { font-size: 1.2rem; }
     .chart-meta { font-size: 0.8rem; color: var(--text-secondary); }
+
+    .view-toggle {
+        display: flex;
+        background: #f3f4f6;
+        padding: 0.25rem;
+        border-radius: 8px;
+    }
+    .view-toggle button {
+        padding: 0.35rem 0.8rem;
+        border: none;
+        background: none;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 6px;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+    }
+    .view-toggle button.active {
+        background: white;
+        color: var(--poke-blue);
+        box-shadow: var(--shadow-sm);
+    }
 
     .svg-wrapper { overflow-x: auto; }
     .price-chart { width: 100%; min-width: 400px; }
