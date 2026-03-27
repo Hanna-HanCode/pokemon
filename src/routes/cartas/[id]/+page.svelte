@@ -10,10 +10,16 @@
         'Português': '🇧🇷','Inglês': '🇺🇸','Japonês': '🇯🇵'
     };
 
-    // Condition display names
+    // Condition display names (Full Portuguese)
     const conditionLabels: Record<string,string> = {
-        'NM': 'Near Mint', 'SP': 'Slightly Played', 'MP': 'Moderately Played',
-        'HP': 'Heavily Played', 'D': 'Danificado', 'NM-MT': 'Near Mint'
+        'M': 'M - Nova', 
+        'NM': 'NM - Praticamente Nova', 
+        'SP': 'SP - Usada Levemente', 
+        'MP': 'MP - Usada Moderadamente', 
+        'HP': 'HP - Muito Usada', 
+        'DMG': 'D - Danificada',
+        'D': 'D - Danificada',
+        'NM-MT': 'NM - Praticamente Nova'
     };
     
     const supertypeLabels: Record<string,string> = {
@@ -165,31 +171,25 @@
 
                 <!-- Current Price Summary -->
                 {#if filteredListings.length > 0}
-                    <div class="price-header-row">
-                        <span class="h-label">CONDIÇÃO</span>
-                        <div class="h-values">
-                            <span class="h-label">MÉDIA</span>
-                            <span class="h-label">MÍNIMO</span>
+                    <div class="quality-price-list">
+                        {#each filteredListings as listing}
+                        <div class="q-price-item">
+                            <div class="q-info">
+                                <span class="q-dot"></span>
+                                <span class="q-label">{conditionLabels[listing.condition] || listing.condition}</span>
+                            </div>
+                            <div class="q-values">
+                                <div class="q-main-price">{formatCurrency(listing.avg_price)}</div>
+                                {#if trends[`${activeLanguage}_${listing.condition}`]}
+                                    <div class="q-trend {trends[`${activeLanguage}_${listing.condition}`].direction}">
+                                        {trends[`${activeLanguage}_${listing.condition}`].direction === 'up' ? '▲' : '▼'} 
+                                        {trends[`${activeLanguage}_${listing.condition}`].percent}%
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
+                        {/each}
                     </div>
-                    {#each filteredListings as listing}
-                    <div class="price-row">
-                        <div class="condition-label">
-                            <span class="dot"></span>
-                            {conditionLabels[listing.condition] || listing.condition}
-                        </div>
-                        <div class="price-values">
-                            <span class="avg-val">{formatCurrency(listing.avg_price)}</span>
-                            {#if trends[activeLanguage]}
-                                <span class="trend-badge {trends[activeLanguage].direction}">
-                                    {trends[activeLanguage].direction === 'up' ? '▲' : '▼'} 
-                                    {trends[activeLanguage].percent}%
-                                </span>
-                            {/if}
-                            <span class="min-val">{formatCurrency(listing.min_price)}</span>
-                        </div>
-                    </div>
-                    {/each}
                 {:else}
                     <p class="no-data">Sem listagens disponíveis para {activeLanguage}.</p>
                 {/if}
@@ -280,7 +280,7 @@
                 <div class="chart-meta">Individualmente (Top 15 mais recentes)</div>
             </div>
 
-            {#if realListings.filter(l => l.language === activeLanguage).length > 0}
+            {#if realListings.filter((l: any) => l.language === activeLanguage).length > 0}
                 <div class="table-wrapper">
                     <table class="real-table">
                         <thead>
@@ -292,7 +292,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {#each realListings.filter(l => l.language === activeLanguage) as rl}
+                            {#each realListings.filter((l: any) => l.language === activeLanguage) as rl}
                                 <tr>
                                     <td><span class="cond-tag">{conditionLabels[rl.condition] || rl.condition}</span></td>
                                     <td><span class="seller-name">{rl.seller_name || 'Particular'}</span></td>
@@ -420,67 +420,37 @@
     }
     .lang-tab:hover:not(.active) { border-color: var(--poke-blue); }
 
-    /* Price rows */
-    .price-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.6rem 0;
-        border-bottom: 1px solid #f3f4f6;
+    .no-data { color: var(--text-secondary); font-size: 0.85rem; margin-top: 1rem; }
+
+    /* Quality Price List */
+    .quality-price-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
     }
 
-    .condition-label {
+    .q-price-item {
+        padding: 0.5rem 0;
+    }
+
+    .q-info {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-
-    .dot {
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        background: var(--poke-blue);
-    }
-
-    .price-values { display: flex; gap: 1rem; align-items: baseline; }
-    .avg-val { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
-    .min-val { font-size: 0.8rem; color: var(--poke-blue); }
-
-    .no-data { color: var(--text-secondary); font-size: 0.85rem; margin-top: 1rem; }
-
-    /* Trend Badge */
-    .trend-badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 0.1rem 0.4rem;
-        border-radius: 4px;
-        margin-left: -0.5rem;
-    }
-    .trend-badge.up { background: rgba(239, 68, 68, 0.1); color: #ef4444; } /* Red for up (bad for buyer) */
-    .trend-badge.down { background: rgba(34, 197, 94, 0.1); color: #22c55e; } /* Green for down (good for buyer) */
-    .trend-badge.flat { background: #f3f4f6; color: #9ca3af; }
-
-    /* Price Header */
-    .price-header-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-        border-bottom: 2px solid var(--border-card);
         margin-bottom: 0.5rem;
     }
-    .h-label {
-        font-size: 0.65rem;
-        font-weight: 800;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    .h-values {
-        display: flex;
-        gap: 2.5rem;
-        margin-right: 0.5rem;
-    }
+
+    .q-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--poke-blue); box-shadow: 0 0 10px rgba(59, 76, 202, 0.3); }
+    .q-label { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+
+    .q-main-price { font-size: 2.2rem; font-weight: 900; color: var(--text-primary); line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
+    .q-trend { font-size: 0.95rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .q-trend.up { color: #ef4444; }
+    .q-trend.down { color: #22c55e; }
+    .q-trend.flat { color: #9ca3af; }
+
+    /* Price Header (Removed but kept for reference if needed) */
 
     /* Chart Section */
     .chart-section {

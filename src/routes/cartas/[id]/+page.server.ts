@@ -58,19 +58,24 @@ export async function load({ params }) {
         const languages = [...new Set(history.map((r: any) => r.language).filter(Boolean))];
         const conditionLanguages = [...new Set(listings.map((r: any) => r.language).filter(Boolean))];
 
-        // 6. Calculate trend (%) based on history
-        const trends: Record<string, any> = {};
-        for (const lang of languages) {
-            const langHistory = history.filter((h: any) => h.language === lang);
-            if (langHistory.length >= 2) {
-                const latest = parseFloat(langHistory[langHistory.length - 1].avg_price);
-                const previous = parseFloat(langHistory[langHistory.length - 2].avg_price);
-                if (previous > 0) {
-                    const diff = ((latest - previous) / previous) * 100;
-                    trends[lang] = {
-                        percent: diff.toFixed(1),
-                        direction: diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
-                    };
+        // 6. Calculate trend (%) based on history (per language AND condition)
+        const trends: Record<string, any> = {}; // dynamic key: `${lang}_${cond}`
+        const langs = [...new Set(history.map((h: any) => h.language))];
+        const conditions = [...new Set(history.map((h: any) => h.condition))];
+
+        for (const lang of langs) {
+            for (const cond of conditions) {
+                const hists = history.filter((h: any) => h.language === lang && h.condition === cond);
+                if (hists.length >= 2) {
+                    const latest = parseFloat(hists[hists.length - 1].avg_price);
+                    const previous = parseFloat(hists[hists.length - 2].avg_price);
+                    if (previous > 0) {
+                        const diff = ((latest - previous) / previous) * 100;
+                        trends[`${lang}_${cond}`] = {
+                            percent: diff.toFixed(1),
+                            direction: diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
+                        };
+                    }
                 }
             }
         }
