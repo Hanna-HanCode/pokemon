@@ -13,7 +13,7 @@ const API_URL = 'https://api.pokemontcg.io/v2/cards';
 const PAGE_SIZE = 250;
 
 async function seedCards() {
-  let page = 1;
+  let page = 78;
   let totalInserted = 0;
   let hasMore = true;
 
@@ -33,34 +33,48 @@ async function seedCards() {
 
       console.log(`[SYNC] Processing ${cards.length} cards...`);
       
-      let batchInserted = 0;
-      for (const card of cards) {
-        const { id, name, set, images, number, rarity, supertype, types } = card;
-        const setName = set.name;
-        const setId = set.id;
-        const imageUrl = images.large || images.small;
-        const typesStr = types ? types.join(',') : null;
+      console.log(`[SYNC] Processing ${cards.length} cards in batch...`);
+      
+      const ids = [];
+      const names = [];
+      const setNames = [];
+      const images = [];
+      const numbers = [];
+      const rarities = [];
+      const supertypes = [];
+      const typesList = [];
+      const setIds = [];
 
-        try {
-          await pool.query(
-            `INSERT INTO cards (id, name, "set", image, collector_number, rarity, supertype, types, set_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             ON CONFLICT (id) DO UPDATE SET
-               rarity = EXCLUDED.rarity,
-               supertype = EXCLUDED.supertype,
-               types = EXCLUDED.types,
-               set_id = EXCLUDED.set_id,
-               image = EXCLUDED.image`,
-            [id, name, setName, imageUrl, number, rarity || null, supertype || null, typesStr, setId]
-          );
-          batchInserted++;
-        } catch (dbErr) {
-          console.error(`[DB] Error inserting ${id}:`, dbErr.message);
-        }
+      for (const card of cards) {
+        ids.push(card.id);
+        names.push(card.name);
+        setNames.push(card.set.name);
+        images.push(card.images.large || card.images.small);
+        numbers.push(card.number);
+        rarities.push(card.rarity || null);
+        supertypes.push(card.supertype || null);
+        typesList.push(card.types ? card.types.join(',') : null);
+        setIds.push(card.set.id);
       }
 
-      totalInserted += batchInserted;
-      console.log(`[PAGE ${page}] Done: ${batchInserted} cards. Total: ${totalInserted}`);
+      try {
+        await pool.query(
+          `INSERT INTO cards (id, name, "set", image, collector_number, rarity, supertype, types, set_id)
+           SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[], $9::text[])
+           ON CONFLICT (id) DO UPDATE SET
+             rarity = EXCLUDED.rarity,
+             supertype = EXCLUDED.supertype,
+             types = EXCLUDED.types,
+             set_id = EXCLUDED.set_id,
+             image = EXCLUDED.image`,
+          [ids, names, setNames, images, numbers, rarities, supertypes, typesList, setIds]
+        );
+      } catch (dbErr) {
+        console.error(`[DB] Batch error on page ${page}:`, dbErr.message);
+      }
+
+      totalInserted += cards.length;
+      console.log(`[PAGE ${page}] Done: ${cards.length} cards. Total: ${totalInserted}`);
 
       if (cards.length < PAGE_SIZE) { hasMore = false; }
       else { page++; }
