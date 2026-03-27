@@ -83,13 +83,17 @@ const SET_CODE_MAP: Record<string, string> = {
     'Prismatic Evolutions': 'PRE',
 };
 
-export async function runScraper(): Promise<RawListingResult[]> {
-    // Fetch all cards from database to scrape
-    const { rows: cards } = await db.query('SELECT id, name, "set", collector_number FROM cards');
+export async function runScraper(targetCards?: any[]): Promise<RawListingResult[]> {
+    // Fetch cards from database to scrape if not provided
+    let cards = targetCards;
+    if (!cards) {
+        const { rows } = await db.query('SELECT id, name, "set", collector_number FROM cards WHERE collector_number IS NOT NULL ORDER BY random()');
+        cards = rows;
+    }
     console.log(`Found ${cards.length} cards to scrape.`);
     
     if (cards.length === 0) {
-        console.warn('No cards found in database to scrape.');
+        console.warn('No cards found to scrape.');
         return [];
     }
 
