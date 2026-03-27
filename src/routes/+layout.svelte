@@ -7,12 +7,12 @@
         <div class="container nav-container">
             <div class="search-box">
                 <span class="search-icon">🔍</span>
-                <input type="text" placeholder="Search for..." />
+                <input type="text" placeholder="Pesquisar..." />
             </div>
             <nav class="main-nav">
-                <a href="/" class="active">Home</a>
+                <a href="/" class="active">Início</a>
                 <a href="/colecoes">Coleções</a>
-                <a href="/popular">Popular</a>
+                <a href="/popular">Populares</a>
                 <a href="/historico">Histórico</a>
                 <a href="/sobre">Sobre</a>
             </nav>

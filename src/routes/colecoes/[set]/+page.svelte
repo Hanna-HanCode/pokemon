@@ -13,17 +13,17 @@
 
     // Type → Emoji mapping
     const typeEmoji: Record<string, string> = {
-        'Colorless': '⬜',
-        'Darkness': '🌑',
-        'Dragon': '🐉',
-        'Fairy': '🧚',
-        'Fighting': '👊',
-        'Fire': '🔥',
-        'Grass': '🌿',
-        'Lightning': '⚡',
-        'Metal': '⚙️',
-        'Psychic': '🔮',
-        'Water': '💧'
+        'Colorless': '⬜ Incolor',
+        'Darkness': '🌑 Escuridão',
+        'Dragon': '🐉 Dragão',
+        'Fairy': '🧚 Fada',
+        'Fighting': '👊 Lutador',
+        'Fire': '🔥 Fogo',
+        'Grass': '🌿 Grama',
+        'Lightning': '⚡ Elétrico',
+        'Metal': '⚙️ Metal',
+        'Psychic': '🔮 Psíquico',
+        'Water': '💧 Água'
     };
 
     function applyFilters() {
@@ -53,6 +53,12 @@
         activeType = '';
         applyFilters();
     }
+
+    const rarityLabels: Record<string,string> = {
+        'Common': 'Comum', 'Uncommon': 'Incomum', 'Rare': 'Rara',
+        'Rare Holo': 'Rara Holo', 'Rare Ultra': 'Rara Ultra',
+        'Promo': 'Promo'
+    };
 
     let searchTimeout: any;
     function onSearchInput() {
@@ -130,7 +136,7 @@
                                 class:active={activeRarity === r.rarity}
                                 on:click={() => toggleRarity(r.rarity)}
                             >
-                                {r.rarity}
+                                {rarityLabels[r.rarity] || r.rarity}
                                 <span class="chip-count">{r.cnt}</span>
                             </button>
                         {/each}
@@ -148,7 +154,7 @@
                                 class:active={activeType === t}
                                 on:click={() => toggleType(t)}
                             >
-                                {typeEmoji[t] || '🃏'} {t}
+                                {typeEmoji[t] || `🃏 ${t}`}
                             </button>
                         {/each}
                     </div>
@@ -178,7 +184,7 @@
                             <div class="card-detail">
                                 <span class="card-name-text">{card.name}</span>
                                 {#if card.rarity}
-                                    <span class="card-rarity">{card.rarity}</span>
+                                    <span class="card-rarity">{rarityLabels[card.rarity] || card.rarity}</span>
                                 {/if}
                                 {#if card.collector_number}
                                     <span class="card-number">#{card.collector_number}</span>

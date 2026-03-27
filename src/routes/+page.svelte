@@ -150,23 +150,23 @@
                     <span class="set-name">{spotlightCard.set}</span>
                     
                     <div class="price-summary">
-                        <span class="label">AVG MARKET</span>
+                        <span class="label">MÉDIA DE MERCADO</span>
                         <div class="avg-price">{formatCurrency(spotlightEdition?.avg_price)}</div>
                     </div>
 
                     <div class="price-stats">
                         <div class="stat">
-                            <span class="label">LOWEST</span>
+                            <span class="label">MENOR PREÇO</span>
                             <span class="val">{formatCurrency(spotlightEdition?.min_price)}</span>
                         </div>
                         <div class="stat">
-                            <span class="label">HIGHEST</span>
+                            <span class="label">MAIOR PREÇO</span>
                             <span class="val">{formatCurrency(spotlightEdition?.max_price)}</span>
                         </div>
                     </div>
 
                     <div class="card-meta">
-                        <span>🏷️ {spotlightEdition?.listing_count || 0} listings</span>
+                        <span>🏷️ {spotlightEdition?.listing_count || 0} listagens</span>
                         <span>📅 {formatDate(spotlightEdition?.date)}</span>
                     </div>
                 </div>
@@ -194,7 +194,7 @@
                         <span class="set-tag">{card.set}</span>
                         <div class="popular-price">{formatCurrency(card.editions[0]?.avg_price)}</div>
                         <div class="popular-meta">
-                            <span>🏷️ {card.editions[0]?.listing_count || 0} listings</span>
+                            <span>🏷️ {card.editions[0]?.listing_count || 0} listagens</span>
                             <span>📅 {formatDate(card.editions[0]?.date)}</span>
                         </div>
                     </div>
@@ -221,7 +221,7 @@
                         <span class="set-tag">{card.set}</span>
                         <div class="popular-price">{formatCurrency(card.editions[0]?.avg_price)}</div>
                         <div class="popular-meta">
-                            <span>🏷️ {card.editions[0]?.listing_count || 0} listings</span>
+                            <span>🏷️ {card.editions[0]?.listing_count || 0} listagens</span>
                             <span>📅 {formatDate(card.editions[0]?.date)}</span>
                         </div>
                     </div>

@@ -13,7 +13,26 @@
     // Condition display names
     const conditionLabels: Record<string,string> = {
         'NM': 'Near Mint', 'SP': 'Slightly Played', 'MP': 'Moderately Played',
-        'HP': 'Heavily Played', 'D': 'Damaged', 'NM-MT': 'Near Mint'
+        'HP': 'Heavily Played', 'D': 'Danificado', 'NM-MT': 'Near Mint'
+    };
+    
+    const supertypeLabels: Record<string,string> = {
+        'Pokémon': 'Pokémon', 'Trainer': 'Treinador', 'Energy': 'Energia'
+    };
+
+    const typeLabels: Record<string,string> = {
+        'Colorless': 'Incolor', 'Darkness': 'Escuridão', 'Dragon': 'Dragão',
+        'Fairy': 'Fada', 'Fighting': 'Lutador', 'Fire': 'Fogo',
+        'Grass': 'Grama', 'Lightning': 'Elétrico', 'Metal': 'Metal',
+        'Psychic': 'Psíquico', 'Water': 'Água'
+    };
+
+    const rarityLabels: Record<string,string> = {
+        'Common': 'Comum', 'Uncommon': 'Incomum', 'Rare': 'Rara',
+        'Rare Holo': 'Rara Holo', 'Rare Ultra': 'Rara Ultra',
+        'Rare Secret': 'Rara Secreta', 'Rare Rainbow': 'Rara Arco-íris',
+        'Rare Shiny': 'Rara Brilhante', 'Amazing Rare': 'Rara Incrível',
+        'Promo': 'Promo', 'Legery': 'Lendária'
     };
 
     function formatCurrency(v: number | string | null) {
@@ -82,7 +101,7 @@
     <div class="container">
         <!-- Breadcrumb -->
         <nav class="breadcrumb">
-            <a href="/">Home</a>
+            <a href="/">Início</a>
             <span>›</span>
             {#if card.set_id}
                 <a href="/colecoes/{card.set_id}">{card.set}</a>
@@ -98,7 +117,7 @@
                 {#if card.image}
                     <img src={card.image} alt={card.name} class="card-img" />
                 {:else}
-                    <div class="card-img-placeholder">No Image</div>
+                    <div class="card-img-placeholder">Sem Imagem</div>
                 {/if}
             </div>
 
@@ -114,14 +133,14 @@
                 <!-- Tags -->
                 <div class="card-tags">
                     {#if card.supertype}
-                        <span class="tag tag-blue">{card.supertype}</span>
+                        <span class="tag tag-blue">{supertypeLabels[card.supertype] || card.supertype}</span>
                     {/if}
                     {#if card.rarity}
-                        <span class="tag tag-gold">{card.rarity}</span>
+                        <span class="tag tag-gold">{rarityLabels[card.rarity] || card.rarity}</span>
                     {/if}
                     {#if card.types}
                         {#each card.types.split(',') as t}
-                            <span class="tag tag-type">{t.trim()}</span>
+                            <span class="tag tag-type">{typeLabels[t.trim()] || t.trim()}</span>
                         {/each}
                     {/if}
                     {#if card.collector_number}
@@ -218,7 +237,7 @@
                         {#each chartData as d, i}
                             <circle cx={xPos(i, chartData.length)} cy={yPos(parseFloat(d.avg_price))}
                                     r="4" fill="var(--poke-blue)" stroke="white" stroke-width="2">
-                                <title>{d.label}: {formatCurrency(d.avg_price)} (min {formatCurrency(d.min_price)} / max {formatCurrency(d.max_price)})</title>
+                                <title>{d.label}: {formatCurrency(d.avg_price)} (mín {formatCurrency(d.min_price)} / máx {formatCurrency(d.max_price)})</title>
                             </circle>
                         {/each}
                     </svg>
@@ -231,7 +250,7 @@
                     <div class="condition-card">
                         <div class="cond-name">{conditionLabels[l.condition] || l.condition}</div>
                         <div class="cond-avg">{formatCurrency(l.avg_price)}</div>
-                        <div class="cond-min">min {formatCurrency(l.min_price)}</div>
+                        <div class="cond-min">mín {formatCurrency(l.min_price)}</div>
                         <div class="cond-count">{l.count} listagem{l.count !== 1 ? 's' : ''}</div>
                     </div>
                     {/each}
