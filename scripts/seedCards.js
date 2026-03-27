@@ -2,14 +2,13 @@ import pkg from 'pg';
 import 'dotenv/config';
 const { Pool } = pkg;
 
-// Configurações de Banco de Dados (Refletindo src/lib/db/index.ts para consistência)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const dbUrl = process.env.DATABASE_URL;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
 const API_URL = 'https://api.pokemontcg.io/v2/cards';
 const PAGE_SIZE = 250;
 
@@ -18,71 +17,65 @@ async function seedCards() {
   let totalInserted = 0;
   let hasMore = true;
 
-  console.log('--- Iniciando Ingestão de Cartas ---');
+  console.log('--- Seeding Cards (with rarity/type) ---');
 
   while (hasMore) {
     try {
-      console.log(`[API] Buscando página ${page} (pageSize=${PAGE_SIZE})...`);
+      console.log(`[API] Fetching page ${page} (pageSize=${PAGE_SIZE})...`);
       const response = await fetch(`${API_URL}?page=${page}&pageSize=${PAGE_SIZE}`);
       
-      if (!response.ok) {
-        throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`API error: ${response.status} ${response.statusText}`);
 
       const data = await response.json();
       const cards = data.data;
 
-      if (!cards || cards.length === 0) {
-        hasMore = false;
-        console.log('[API] Fim dos dados.');
-        break;
-      }
+      if (!cards || cards.length === 0) { hasMore = false; break; }
 
-      console.log(`[SYNC] Inserindo ${cards.length} cartas no banco...`);
+      console.log(`[SYNC] Processing ${cards.length} cards...`);
       
       let batchInserted = 0;
       for (const card of cards) {
-        const { id, name, set, images, number } = card;
+        const { id, name, set, images, number, rarity, supertype, types } = card;
         const setName = set.name;
+        const setId = set.id;
         const imageUrl = images.large || images.small;
-        const collectorNumber = number;
+        const typesStr = types ? types.join(',') : null;
 
         try {
           await pool.query(
-            `INSERT INTO cards (id, name, set, image, collector_number)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (id) DO NOTHING`,
-            [id, name, setName, imageUrl, collectorNumber]
+            `INSERT INTO cards (id, name, "set", image, collector_number, rarity, supertype, types, set_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             ON CONFLICT (id) DO UPDATE SET
+               rarity = EXCLUDED.rarity,
+               supertype = EXCLUDED.supertype,
+               types = EXCLUDED.types,
+               set_id = EXCLUDED.set_id,
+               image = EXCLUDED.image`,
+            [id, name, setName, imageUrl, number, rarity || null, supertype || null, typesStr, setId]
           );
           batchInserted++;
         } catch (dbErr) {
-          console.error(`[DB] Erro ao inserir carta ${id}:`, dbErr.message);
+          console.error(`[DB] Error inserting ${id}:`, dbErr.message);
         }
       }
 
       totalInserted += batchInserted;
-      console.log(`[PÁGINA ${page}] Sucesso: ${batchInserted} cartas. Total acumulado: ${totalInserted}`);
+      console.log(`[PAGE ${page}] Done: ${batchInserted} cards. Total: ${totalInserted}`);
 
-      if (cards.length < PAGE_SIZE) {
-        hasMore = false;
-        console.log('[API] Última página alcançada.');
-      } else {
-        page++;
-      }
+      if (cards.length < PAGE_SIZE) { hasMore = false; }
+      else { page++; }
 
     } catch (err) {
-      console.error(`[ERRO] Falha na página ${page}:`, err.message);
-      // Tentativa de continuar para a próxima página ou parar
-      break; 
+      console.error(`[ERROR] Page ${page}:`, err.message);
+      break;
     }
   }
 
-  console.log('--- Ingestão Concluída ---');
-  console.log(`Total final de cartas processadas: ${totalInserted}`);
+  console.log(`--- Seeding Complete: ${totalInserted} cards ---`);
   await pool.end();
 }
 
 seedCards().catch(err => {
-  console.error('[FATAL] Script falhou:', err);
+  console.error('[FATAL]', err);
   process.exit(1);
 });

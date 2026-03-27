@@ -11,6 +11,7 @@
             </div>
             <nav class="main-nav">
                 <a href="/" class="active">Home</a>
+                <a href="/colecoes">Coleções</a>
                 <a href="/popular">Popular</a>
                 <a href="/historico">Histórico</a>
                 <a href="/sobre">Sobre</a>
