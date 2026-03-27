@@ -17,8 +17,7 @@
 
     function formatDate(dateStr: string | null) {
         if (!dateStr) return '---';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('pt-BR');
+        return dateStr; // Already formatted as DD/MM/YYYY by the server
     }
 
     // Group stats by card, preserving server order (listing_count DESC)

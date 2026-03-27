@@ -11,7 +11,8 @@ export async function load() {
             )
             SELECT 
                 c.id, c.name, c.set, c.image,
-                ls.language, ls.avg_price, ls.min_price, ls.max_price, ls.listing_count, ls.date
+                ls.language, ls.avg_price, ls.min_price, ls.max_price, ls.listing_count,
+                TO_CHAR(ls.date, 'DD/MM/YYYY') as date
             FROM cards c
             INNER JOIN LatestStats ls ON c.id = ls.card_id
             ORDER BY ls.listing_count DESC, ls.avg_price DESC
