@@ -13,7 +13,7 @@ const API_URL = 'https://api.pokemontcg.io/v2/cards';
 const PAGE_SIZE = 250;
 
 async function seedCards() {
-  let page = 78;
+  let page = 1;
   let totalInserted = 0;
   let hasMore = true;
 
