@@ -171,7 +171,7 @@
             {:else}
                 <div class="cards-grid">
                     {#each cards as card}
-                        <div class="card-item">
+                        <a href="/cartas/{card.id}" class="card-item">
                             <div class="card-image">
                                 <img src={card.image} alt={card.name} loading="lazy" />
                             </div>
@@ -184,7 +184,7 @@
                                     <span class="card-number">#{card.collector_number}</span>
                                 {/if}
                             </div>
-                        </div>
+                        </a>
                     {/each}
                 </div>
 

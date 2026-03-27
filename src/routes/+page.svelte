@@ -35,7 +35,7 @@
             acc[curr.id].editions.push(curr);
         }
         return acc;
-    }, {}));
+    }, {})) as any[];
 
     // Separate popular cards (top 10) from the rest
     $: popularSet = new Set(data.popularIds || []);
@@ -182,7 +182,7 @@
         
         <div class="popular-grid">
             {#each popularCards as card, i}
-                <div class="popular-item card">
+                <a href="/cartas/{card.id}" class="popular-item card">
                     <div class="badge-container">
                         <span class="badge-popular">★ #{i + 1} POPULAR</span>
                     </div>
@@ -198,7 +198,7 @@
                             <span>📅 {formatDate(card.editions[0]?.date)}</span>
                         </div>
                     </div>
-                </div>
+                </a>
             {/each}
         </div>
     </section>
@@ -212,7 +212,7 @@
         
         <div class="popular-grid">
             {#each otherCards as card}
-                <div class="popular-item card">
+                <a href="/cartas/{card.id}" class="popular-item card">
                     <div class="popular-img">
                         <img src={card.image} alt={card.name} />
                     </div>
@@ -225,7 +225,7 @@
                             <span>📅 {formatDate(card.editions[0]?.date)}</span>
                         </div>
                     </div>
-                </div>
+                </a>
             {/each}
         </div>
     </section>
@@ -387,6 +387,11 @@
     .popular-item:hover {
         transform: translateY(-5px);
         box-shadow: var(--shadow-lg);
+    }
+
+    a.popular-item {
+        text-decoration: none;
+        color: inherit;
     }
 
     .badge-container {
