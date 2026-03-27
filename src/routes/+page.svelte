@@ -429,10 +429,6 @@
         color: var(--text-secondary);
     }
 
-    .load-more {
-        text-align: center;
-        margin-top: 3rem;
-    }
 
     .set-tag {
         color: var(--poke-blue);

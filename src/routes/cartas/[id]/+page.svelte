@@ -165,6 +165,13 @@
 
                 <!-- Current Price Summary -->
                 {#if filteredListings.length > 0}
+                    <div class="price-header-row">
+                        <span class="h-label">CONDIÇÃO</span>
+                        <div class="h-values">
+                            <span class="h-label">MÉDIA</span>
+                            <span class="h-label">MÍNIMO</span>
+                        </div>
+                    </div>
                     {#each filteredListings as listing}
                     <div class="price-row">
                         <div class="condition-label">
@@ -249,6 +256,7 @@
                     {#each filteredListings as l}
                     <div class="condition-card">
                         <div class="cond-name">{conditionLabels[l.condition] || l.condition}</div>
+                        <div class="cond-avg-label">MÉDIA</div>
                         <div class="cond-avg">{formatCurrency(l.avg_price)}</div>
                         <div class="cond-min">mín {formatCurrency(l.min_price)}</div>
                         <div class="cond-count">{l.count} listagem{l.count !== 1 ? 's' : ''}</div>
@@ -400,6 +408,27 @@
 
     .no-data { color: var(--text-secondary); font-size: 0.85rem; margin-top: 1rem; }
 
+    /* Price Header */
+    .price-header-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid var(--border-card);
+        margin-bottom: 0.5rem;
+    }
+    .h-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .h-values {
+        display: flex;
+        gap: 2.5rem;
+        margin-right: 0.5rem;
+    }
+
     /* Chart Section */
     .chart-section {
         margin-bottom: 1.5rem;
@@ -443,7 +472,8 @@
         padding: 0.75rem 1rem;
     }
 
-    .cond-name { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem; }
+    .cond-name { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .cond-avg-label { font-size: 0.6rem; font-weight: 700; color: var(--poke-blue); opacity: 0.8; margin-bottom: -0.2rem; }
     .cond-avg { font-size: 1.2rem; font-weight: 800; color: var(--text-primary); }
     .cond-min { font-size: 0.75rem; color: var(--poke-blue); margin-bottom: 0.25rem; }
     .cond-count { font-size: 0.7rem; color: var(--text-secondary); }
