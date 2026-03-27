@@ -122,16 +122,22 @@ export async function runScraper(targetCards?: any[]): Promise<RawListingResult[
             const cardNum = card.collector_number?.split('/')[0] || card.collector_number;
             let cardUrl = `https://www.ligapokemon.com.br/?view=cards/card&card=${encodeURIComponent(card.name)}&ed=${ligaSetCode}&num=${cardNum || ''}&show=1`;
             
-            console.log(`[PROCESS] ${card.name} (${card.set}) [#${cardNum}] → ${cardUrl}`);
-            
             try {
-                await page.waitForTimeout(5000);
+                // Restoration of page.goto (was missing)
+                await page.goto(cardUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                
+                // Extra wait for dynamic LigaPokemon elements
+                await page.waitForTimeout(3000);
                 
                 // --- VERIFICATION STEP ---
-                // Wait for the selectors to be present
-                await page.waitForSelector('.card-name', { timeout: 10000 }).catch(() => {});
+                // Try multiple times to get the card name (sometimes lazy loads)
+                let pageCardName = '';
+                for (let i = 0; i < 3; i++) {
+                    pageCardName = await page.locator('.card-name').first().textContent().catch(() => '') || '';
+                    if (pageCardName) break;
+                    await page.waitForTimeout(1000);
+                }
                 
-                let pageCardName = await page.locator('.card-name').first().textContent().catch(() => '');
                 let pageEdition = await page.locator('.select-card-edition .entry, .select-card-edition [id*="select2-"], .select2-selection__rendered').first().textContent().catch(() => '');
                 let pageNumber = await page.locator('.select-card-edition b').first().textContent().catch(() => '');
                 
