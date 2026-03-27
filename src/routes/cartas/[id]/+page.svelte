@@ -11,10 +11,24 @@
         'M': 'Nova', 'Mint': 'Nova',
         'NM': 'Praticamente Nova', 'Near Mint': 'Praticamente Nova',
         'SP': 'Usada Levemente', 'Slightly Played': 'Usada Levemente',
+        'LP': 'Usada Levemente', 'Lightly Played': 'Usada Levemente',
         'MP': 'Usada Moderadamente', 'Moderately Played': 'Usada Moderadamente',
         'HP': 'Muito Usada', 'Heavily Played': 'Muito Usada',
         'DMG': 'Danificada', 'Damaged': 'Danificada', 'D': 'Danificada',
         'NM-MT': 'Praticamente Nova'
+    };
+
+    const langEmoji: Record<string,string> = {
+        'Português': '🇧🇷','Inglês': '🇺🇸','Japonês': '🇯🇵'
+    };
+
+    const translate = (val: string, map: Record<string, string>) => {
+        if (!val) return val;
+        const trimmed = val.trim();
+        if (map[trimmed]) return map[trimmed];
+        const lower = trimmed.toLowerCase();
+        const entry = Object.entries(map).find(([k]) => k.toLowerCase() === lower);
+        return entry ? entry[1] : trimmed;
     };
     
     const supertypeLabels: Record<string,string> = {
@@ -135,14 +149,14 @@
                 <!-- Tags -->
                 <div class="card-tags">
                     {#if card.supertype}
-                        <span class="tag tag-blue">{supertypeLabels[card.supertype] || card.supertype}</span>
+                        <span class="tag tag-blue">{translate(card.supertype, supertypeLabels)}</span>
                     {/if}
                     {#if card.rarity}
-                        <span class="tag tag-gold">{rarityLabels[card.rarity] || card.rarity}</span>
+                        <span class="tag tag-gold">{translate(card.rarity, rarityLabels)}</span>
                     {/if}
                     {#if card.types}
                         {#each card.types.split(',') as t}
-                            <span class="tag tag-type">{typeLabels[t.trim()] || t.trim()}</span>
+                            <span class="tag tag-type">{translate(t.trim(), typeLabels)}</span>
                         {/each}
                     {/if}
                     {#if card.collector_number}
@@ -172,7 +186,7 @@
                         <div class="q-price-item">
                             <div class="q-info">
                                 <span class="q-dot"></span>
-                                <span class="q-label">{conditionLabels[listing.condition] || listing.condition}</span>
+                                <span class="q-label">{translate(listing.condition, conditionLabels)}</span>
                             </div>
                             <div class="q-values">
                                 <div class="q-main-price">{formatCurrency(listing.avg_price)}</div>
@@ -268,7 +282,7 @@
                 <div class="chart-meta">Individualmente (Top 15 mais recentes)</div>
             </div>
 
-            {#if realListings.filter((l: any) => l.language === activeLanguage).length > 0}
+            {#if realListings.filter((l) => l.language === activeLanguage).length > 0}
                 <div class="table-wrapper">
                     <table class="real-table">
                         <thead>
@@ -280,9 +294,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {#each realListings.filter((l: any) => l.language === activeLanguage) as rl}
+                            {#each realListings.filter((l) => l.language === activeLanguage) as rl}
                                 <tr>
-                                    <td><span class="cond-tag">{conditionLabels[rl.condition] || rl.condition}</span></td>
+                                    <td><span class="cond-tag">{translate(rl.condition, conditionLabels)}</span></td>
                                     <td><span class="seller-name">{rl.seller_name || 'Particular'}</span></td>
                                     <td class="price-cell">{formatCurrency(rl.price)}</td>
                                     <td class="time-cell">{rl.time}</td>
@@ -296,6 +310,7 @@
             {/if}
         </div>
     </div>
+    <div class="version-tag">v1.1.0-FIX-TRANS</div>
 </div>
 
 <style>
@@ -357,6 +372,15 @@
         max-height: 40px;
         object-fit: contain;
         margin-bottom: 0.75rem;
+    }
+
+    .version-tag {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        font-size: 10px;
+        color: #ccc;
+        opacity: 0.5;
     }
 
     .card-title {
