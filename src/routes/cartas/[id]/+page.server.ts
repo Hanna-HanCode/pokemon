@@ -1,6 +1,8 @@
 import { db } from '$lib/db/index.js';
 import { error } from '@sveltejs/kit';
 
+export const prerender = false;
+
 export async function load({ params }) {
     const cardId = params.id;
 

@@ -1,5 +1,16 @@
 <script>
     import "../app.css";
+    import { onMount } from "svelte";
+    import { invalidateAll } from "$app/navigation";
+
+    onMount(() => {
+        // Refresh data every 2 minutes (120000ms) to reflect cron updates
+        const interval = setInterval(() => {
+            invalidateAll();
+        }, 120000);
+
+        return () => clearInterval(interval);
+    });
 </script>
 
 <div class="layout-wrapper">

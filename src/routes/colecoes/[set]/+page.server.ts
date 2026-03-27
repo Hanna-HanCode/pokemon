@@ -1,5 +1,7 @@
 import { db } from '$lib/db/index.js';
 
+export const prerender = false;
+
 export async function load({ params, url }) {
     const setId = params.set;
     const page = 1;

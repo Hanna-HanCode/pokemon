@@ -1,5 +1,7 @@
 import { db } from '$lib/db/index.js';
 
+export const prerender = false;
+
 export async function load() {
     try {
         const { rows: sets } = await db.query(`

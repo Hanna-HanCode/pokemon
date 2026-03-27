@@ -1,5 +1,7 @@
 import { db } from '$lib/db/index.js';
 
+export const prerender = false;
+
 export async function load() {
     try {
         // Only fetch cards that have real stats, ordered by relevance
