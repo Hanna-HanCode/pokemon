@@ -12,14 +12,19 @@
 
     // Condition display names (Full Portuguese)
     const conditionLabels: Record<string,string> = {
-        'M': 'M - Nova', 
-        'NM': 'NM - Praticamente Nova', 
-        'SP': 'SP - Usada Levemente', 
-        'MP': 'MP - Usada Moderadamente', 
-        'HP': 'HP - Muito Usada', 
-        'DMG': 'D - Danificada',
-        'D': 'D - Danificada',
-        'NM-MT': 'NM - Praticamente Nova'
+        'M': 'Nova', 
+        'NM': 'Praticamente Nova', 
+        'SP': 'Usada Levemente', 
+        'MP': 'Usada Moderadamente', 
+        'HP': 'Muito Usada', 
+        'DMG': 'Danificada',
+        'D': 'Danificada',
+        'Near Mint': 'Praticamente Nova',
+        'Slightly Played': 'Usada Levemente',
+        'Moderately Played': 'Usada Moderadamente',
+        'Heavily Played': 'Muito Usada',
+        'Damaged': 'Danificada',
+        'NM-MT': 'Praticamente Nova'
     };
     
     const supertypeLabels: Record<string,string> = {
@@ -256,20 +261,6 @@
                     </svg>
                 </div>
 
-                <!-- Condition Cards Bottom -->
-                {#if filteredListings.length > 0}
-                <div class="condition-grid">
-                    {#each filteredListings as l}
-                    <div class="condition-card">
-                        <div class="cond-name">{conditionLabels[l.condition] || l.condition}</div>
-                        <div class="cond-avg-label">MÉDIA</div>
-                        <div class="cond-avg">{formatCurrency(l.avg_price)}</div>
-                        <div class="cond-min">mín {formatCurrency(l.min_price)}</div>
-                        <div class="cond-count">{l.count} listagem{l.count !== 1 ? 's' : ''}</div>
-                    </div>
-                    {/each}
-                </div>
-                {/if}
             {/if}
         </div>
 
