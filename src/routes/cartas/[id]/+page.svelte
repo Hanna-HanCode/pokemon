@@ -1,7 +1,7 @@
 <script lang="ts">
     export let data: any;
 
-    const { card, history, listings, languages } = data;
+    const { card, history, listings, languages, realListings, trends } = data;
 
     let activeLanguage = languages[0] || 'Português';
 
@@ -180,6 +180,12 @@
                         </div>
                         <div class="price-values">
                             <span class="avg-val">{formatCurrency(listing.avg_price)}</span>
+                            {#if trends[activeLanguage]}
+                                <span class="trend-badge {trends[activeLanguage].direction}">
+                                    {trends[activeLanguage].direction === 'up' ? '▲' : '▼'} 
+                                    {trends[activeLanguage].percent}%
+                                </span>
+                            {/if}
                             <span class="min-val">{formatCurrency(listing.min_price)}</span>
                         </div>
                     </div>
@@ -264,6 +270,41 @@
                     {/each}
                 </div>
                 {/if}
+            {/if}
+        </div>
+
+        <!-- Real Listings Table -->
+        <div class="real-listings-section card">
+            <div class="chart-header">
+                <h2>🤝 Ofertas Reais do Momento</h2>
+                <div class="chart-meta">Individualmente (Top 15 mais recentes)</div>
+            </div>
+
+            {#if realListings.filter(l => l.language === activeLanguage).length > 0}
+                <div class="table-wrapper">
+                    <table class="real-table">
+                        <thead>
+                            <tr>
+                                <th>Condição</th>
+                                <th>Vendedor</th>
+                                <th>Preço</th>
+                                <th>Coletado em</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each realListings.filter(l => l.language === activeLanguage) as rl}
+                                <tr>
+                                    <td><span class="cond-tag">{conditionLabels[rl.condition] || rl.condition}</span></td>
+                                    <td><span class="seller-name">{rl.seller_name || 'Particular'}</span></td>
+                                    <td class="price-cell">{formatCurrency(rl.price)}</td>
+                                    <td class="time-cell">{rl.time}</td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            {:else}
+                <p class="no-data">Nenhuma oferta individual recente para {activeLanguage}.</p>
             {/if}
         </div>
     </div>
@@ -408,6 +449,18 @@
 
     .no-data { color: var(--text-secondary); font-size: 0.85rem; margin-top: 1rem; }
 
+    /* Trend Badge */
+    .trend-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        margin-left: -0.5rem;
+    }
+    .trend-badge.up { background: rgba(239, 68, 68, 0.1); color: #ef4444; } /* Red for up (bad for buyer) */
+    .trend-badge.down { background: rgba(34, 197, 94, 0.1); color: #22c55e; } /* Green for down (good for buyer) */
+    .trend-badge.flat { background: #f3f4f6; color: #9ca3af; }
+
     /* Price Header */
     .price-header-row {
         display: flex;
@@ -478,8 +531,22 @@
     .cond-min { font-size: 0.75rem; color: var(--poke-blue); margin-bottom: 0.25rem; }
     .cond-count { font-size: 0.7rem; color: var(--text-secondary); }
 
+    /* Real Table */
+    .real-listings-section { margin-top: 1.5rem; }
+    .table-wrapper { overflow-x: auto; margin-top: 1rem; }
+    .real-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+    .real-table th { text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); padding: 1rem; border-bottom: 2px solid var(--border-card); }
+    .real-table td { padding: 1rem; font-size: 0.85rem; border-bottom: 1px solid #f3f4f6; }
+    
+    .cond-tag { font-size: 0.75rem; font-weight: 600; color: var(--text-primary); }
+    .seller-name { font-weight: 500; color: var(--poke-blue); }
+    .price-cell { font-weight: 800; color: var(--text-primary); font-size: 0.95rem; }
+    .time-cell { font-size: 0.75rem; color: var(--text-secondary); }
+
     @media (max-width: 768px) {
         .hero-card { grid-template-columns: 1fr; }
         .card-img { max-width: 220px; }
+        .price-values { gap: 0.5rem; }
+        .trend-badge { font-size: 0.65rem; }
     }
 </style>

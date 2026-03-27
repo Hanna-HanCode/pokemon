@@ -20,8 +20,8 @@ async function main() {
     if (normalized.card_id && normalized.price) {
       console.log(`Inserting normalized listing for ${normalized.card_id}...`);
       await db.query(
-        `INSERT INTO listings_normalized (card_id, price, condition, language, collected_at) VALUES ($1, $2, $3, $4, NOW());`,
-        [normalized.card_id, normalized.price, normalized.condition, normalized.language]
+        `INSERT INTO listings_normalized (card_id, price, condition, language, seller_name, collected_at) VALUES ($1, $2, $3, $4, $5, NOW());`,
+        [normalized.card_id, normalized.price, normalized.condition, normalized.language, normalized.seller_name]
       );
       await db.query(`UPDATE listings_raw SET processed = true WHERE id = $1;`, [rows[0].id]);
     }

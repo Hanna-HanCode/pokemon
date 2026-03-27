@@ -1,4 +1,4 @@
-export async function normalizeRawListing(item: any): Promise<{ card_id: string | null, price: number | null, condition: string | null, language: string }> {
+export async function normalizeRawListing(item: any): Promise<{ card_id: string | null, price: number | null, condition: string | null, language: string, seller_name: string | null }> {
   let card_id = item.card_id || null;
   
   let price = null;
@@ -19,6 +19,7 @@ export async function normalizeRawListing(item: any): Promise<{ card_id: string 
   else if (conditionLower === 'd' || conditionLower.includes('damaged')) condition = 'DMG';
 
   let language = item.language || 'Desconhecido';
+  let seller_name = item.seller_name || null;
 
-  return { card_id, price, condition, language };
+  return { card_id, price, condition, language, seller_name };
 }
