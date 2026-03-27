@@ -84,3 +84,63 @@ a {
     gap: 0.25rem;
     text-transform: uppercase;
 }
+
+/* Print Overrides */
+@media print {
+    :root {
+        --bg-main: #ffffff;
+        --text-primary: #000000;
+        --shadow-sm: none;
+        --shadow-md: none;
+        --shadow-lg: none;
+        --shadow-card: none;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .layout-wrapper {
+        display: block !important;
+        min-height: auto !important;
+    }
+
+    .main-header, .search-box, .main-nav, .breadcrumb {
+        display: none !important;
+    }
+
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .series-section {
+        margin-bottom: 2rem !important;
+        page-break-inside: avoid;
+    }
+
+    .sets-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 1rem !important;
+    }
+
+    .set-card {
+        border: 1px solid #eee !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .set-logo-wrapper {
+        height: 60px !important;
+    }
+
+    .set-name {
+        font-size: 0.75rem !important;
+    }
+}
