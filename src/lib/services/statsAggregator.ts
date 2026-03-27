@@ -4,7 +4,7 @@ export async function generateDailyStats(date: string) {
     const res = await db.query(`
         SELECT DISTINCT card_id, language
         FROM listings_normalized 
-        WHERE DATE(collected_at) = $1
+        WHERE DATE(collected_at AT TIME ZONE 'America/Sao_Paulo') = $1
     `, [date]);
 
     for (const row of res.rows) {
@@ -16,7 +16,7 @@ export async function generateDailyStats(date: string) {
                 MAX(price) as max_price,
                 COUNT(*) as listing_count
             FROM listings_normalized
-            WHERE card_id = $1 AND language = $2 AND DATE(collected_at) = $3
+            WHERE card_id = $1 AND language = $2 AND DATE(collected_at AT TIME ZONE 'America/Sao_Paulo') = $3
         `, [card_id, language, date]);
 
         if (statsRes.rows.length > 0) {
@@ -44,7 +44,10 @@ export async function generateDailyStats(date: string) {
 }
 
 export async function runStatsAggregator() {
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`Running Daily Stats Aggregator for ${today}...`);
+    // Use Brasília local date (UTC-3) instead of UTC to avoid day boundary mismatch
+    const now = new Date();
+    const brDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const today = brDate.toISOString().split('T')[0];
+    console.log(`Running Daily Stats Aggregator for ${today} (BRT)...`);
     await generateDailyStats(today);
 }
